@@ -18,15 +18,14 @@ class Session < ActiveRecord::Base
   belongs_to :audience_level
   belongs_to :conference
 
-  has_many :early_reviews
-  has_many :final_reviews
+  has_many :reviews
   has_one :review_decision
 
   validates_presence_of :title, :summary, :description, :benefits, :target_audience,
                         :audience_level_id, :author_id, :track_id, :session_type_id,
                         :experience, :duration_mins, :keyword_list, :conference_id
 
-  validates_presence_of :mechanics, :if => :requires_mechanics?
+  validates_presence_of :mechanics, :if => :workshop?
   validates_inclusion_of :duration_mins, :in => [10, 50, 110], :allow_blank => true
   validates_numericality_of :audience_limit, :only_integer => true, :greater_than => 0, :allow_nil => true
 
@@ -52,29 +51,17 @@ class Session < ActiveRecord::Base
   validates_each :duration_mins, :if => :experience_report?, :allow_blank => true do |record, attr, value|
     record.errors.add(attr, :experience_report_talk_duration) if record.session_type.try(:title) == 'session_types.talk.title' && value != 50
   end
-  validates_each :duration_mins, :if => :lightning_talk? do |record, attr, value|
+  validates_each :duration_mins, :unless => :lightning_talk?, :allow_blank => true do |record, attr, value|
+    record.errors.add(attr, :non_lightning_talk_duration) unless [50, 110].include?(value)
+  end
+  validates_each :duration_mins, :if => :lightning_talk?, :allow_blank => true do |record, attr, value|
     record.errors.add(attr, :lightning_talk_duration) if value != 10
-  end
-  validates_each :duration_mins, :if => :talk?, :allow_blank => true do |record, attr, value|
-    record.errors.add(attr, :talk_duration) if value != 50
-  end
-  validates_each :duration_mins, :if => :hands_on?, :allow_blank => true do |record, attr, value|
-    record.errors.add(attr, :hands_on_duration) if value != 110
   end
   validates_each :session_type_id, :if => :experience_report? do |record, attr, value|
     record.errors.add(attr, :experience_report_session_type) unless ['session_types.talk.title', 'session_types.lightning_talk.title'].include?(record.session_type.try(:title))
   end
   validates_each :author_id, :on => :update do |record, attr, value|
     record.errors.add(attr, :constant) if record.author_id_changed?
-  end
-  validates_each :track_id, :allow_blank => true do |record, attr, value|
-    record.errors.add(attr, :invalid) if record.track.conference_id != record.conference_id
-  end
-  validates_each :audience_level_id, :allow_blank => true do |record, attr, value|
-    record.errors.add(attr, :invalid) if record.audience_level.conference_id != record.conference_id
-  end
-  validates_each :session_type_id, :allow_blank => true do |record, attr, value|
-    record.errors.add(attr, :invalid) if record.session_type.conference_id != record.conference_id
   end
 
   scope :for_conference, lambda { |c| where('conference_id = ?', c.id)}
@@ -83,50 +70,25 @@ class Session < ActiveRecord::Base
 
   scope :for_tracks, lambda { |track_ids| where('track_id IN (?)', track_ids) }
 
-  scope :not_author, lambda { |u|
-    where('author_id <> ? AND (second_author_id IS NULL OR second_author_id <> ?)', u.to_i, u.to_i)
-  }
+  scope :not_author, lambda { |u| where('author_id <> ? AND (second_author_id IS NULL OR second_author_id <> ?)', u.to_i, u.to_i) }
 
-  scope :not_reviewed_by, lambda { |user, review_type|
-    select("sessions.*").
-    joins("LEFT OUTER JOIN reviews ON sessions.id = reviews.session_id AND reviews.type = '#{review_type}'").
-    where('reviews.reviewer_id IS NULL OR reviews.reviewer_id <> ?', user.id).
-    group('sessions.id').
-    having("count(reviews.id) = sessions.#{review_type.underscore.pluralize}_count")
-  }
+  scope :reviewed_by, lambda { |u, c| where('reviewer_id = ? AND conference_id = ?', u.id, c.id).joins(:reviews) }
 
   scope :for_preferences, lambda { |*preferences|
-    return none if preferences.empty?
+    return where('1 = 2') if preferences.empty?
     clause = preferences.map { |p| "(track_id = ? AND audience_level_id <= ?)" }.join(" OR ")
     args = preferences.map {|p| [p.track_id, p.audience_level_id]}.flatten
     where(clause, *args)
   }
 
-  scope :none, where('1 = 0')
-
-  scope :with_incomplete_final_reviews, where('final_reviews_count < ?', 3)
-  scope :with_incomplete_early_reviews, where('early_reviews_count < ?', 1)
-  scope :submitted_before, lambda { |date| where('sessions.created_at <= ?', date) }
-
-  def self.for_review_in(conference)
-    sessions = for_conference(conference).without_state(:cancelled)
-    if conference.in_early_review_phase?
-      sessions.submitted_before(conference.presubmissions_deadline + 3.hours)
-    else
-      sessions
-    end
-  end
+  scope :incomplete_reviews, lambda { |limit| where('reviews_count < ?', limit) }
 
   def self.for_reviewer(user, conference)
-    sessions = for_review_in(conference).
-      not_author(user.id).
-      for_preferences(*user.preferences(conference)).
-      not_reviewed_by(user, conference.in_early_review_phase? ? 'EarlyReview' : 'FinalReview')
-    if conference.in_final_review_phase?
-      sessions.with_incomplete_final_reviews
-    else
-      sessions
-    end
+    for_conference(conference).
+    incomplete_reviews(3).
+    not_author(user.id).
+    without_state(:cancelled).
+    for_preferences(*user.preferences(conference)).all - reviewed_by(user, conference).all
   end
 
   state_machine :initial => :created do
@@ -188,23 +150,15 @@ class Session < ActiveRecord::Base
   end
 
   def lightning_talk?
-    self.session_type.try(:lightning_talk?)
-  end
-
-  def hands_on?
-    self.session_type.try(:hands_on?)
-  end
-
-  def talk?
-    self.session_type.try(:talk?)
+    self.session_type.try(:title) == 'session_types.lightning_talk.title'
   end
 
   private
-  def requires_mechanics?
-    session_type.try(:workshop?) || session_type.try(:hands_on?)
+  def workshop?
+    self.session_type.try(:title) == 'session_types.workshop.title'
   end
 
   def experience_report?
-    track.try(:experience_report?)
+    self.track.try(:title) == 'tracks.experience_reports.title'
   end
 end

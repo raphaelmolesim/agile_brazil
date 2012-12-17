@@ -1,9 +1,14 @@
 /*
- *= require vendor_libs
+ *= require_self
+ *= require formtastic
+ *= require formtastic_changes
+ *= require jquery.autocomplete
  */
-@import "mixins/*";
-@import "formtastic_changes";
-@import "jquery.ui.autocomplete_changes";
+
+@import "mixins/reset.scss";
+@import "mixins/text.scss";
+@import "mixins/grid.scss";
+@import "mixins/helper.scss";
 
 $color1: #009933;
 $color2: #5ad295;
@@ -21,7 +26,7 @@ a {
 a:hover {
   color: $color5 + #333333; }
 
-.auto_focus, .hidden {
+.auto_focus {
   display: none; }
 
 #header {
@@ -199,10 +204,6 @@ table.summary {
   border-top: 1px solid #cccccc;
   padding: 5px;
   margin: 10px 0;
-  .avatar {
-    float: none;
-    display: inline;
-  }
   cite {
     font-weight: bold;
     clear: both; }
@@ -432,41 +433,31 @@ p#review_decision {
   -webkit-border-radius: 10px;
   border: 1px dashed #1c8c1c;
   padding: 10px;
-  width: 90%;
-}
+  width: 90%; }
 
-form.early_review.formtastic, form.final_review.formtastic {
+form.review.formtastic {
   fieldset.inputs {
     legend {
       font-size: 14pt;
       color: black;
       border-bottom: 1px solid black;
-      width: 100%;
-    }
+      width: 100%; }
     ol {
       float: none;
       li fieldset legend.label {
         border-bottom: 0;
         label {
-          font-size: 10pt;
-        }
-      }
+          font-size: 10pt; } }
       li.hidden {
-        display: inline;
-      }
+        display: inline; }
       li label {
-        display: inline;
-      }
+        display: inline; }
       li.radio fieldset {
         legend.label {
           position: relative; }
         ol {
           padding-top: 1.5em;
-          padding-left: 0px;
-        }
-      }
-    }
-  }
+          padding-left: 0px; } } } }
   .session_info {
     background-color: $color4;
     border-radius: 10px;
@@ -480,87 +471,101 @@ form.early_review.formtastic, form.final_review.formtastic {
       li {
         margin-bottom: 0px;
         display: list-item;
-        margin-left: 0.5em;
-      }
-    }
+        margin-left: 0.5em; } }
     ul {
       list-style: disc outside;
       padding-left: 1em;
       li {
         margin-bottom: 0px;
         display: list-item;
-        margin-left: 0.5em;
-      }
-    }
+        margin-left: 0.5em; } }
     p strong {
-      font-weight: bold;
-    }
-  }
+      font-weight: bold; } }
   select {
-    display: inline;
-  }
+    display: inline; }
   fieldset ol li ul.errors {
-    float: none;
-  }
-}
+    float: none; } }
 
-form.session_filter.formtastic fieldset {
-  &.inputs {
-    float: left;
-    width: 85%;
-  }
-
-  &.buttons {
-    float: right;
-  }
-
-  ol li {
-    width: 30%;
-    margin: 0;
-
-    &.input {
-      padding-right: 19px;
-      float: left;
-
-      input {
-        width: 100%;
-      }
-    }
-
-    &.commit {
-      margin-top: 20px;
-      padding-right: 0;
-    }
-  }
-}
-
-#review_progress_count, #review_decisions_progress_count {
+#review_progress_count {
   font-size: 8pt;
   padding-bottom: 4px; }
+
+span.bio {
+  background-color: $color4;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  border: 1px dashed #1c8c1c;
+  padding: 10px;
+  width: 90%;
+  display: block;
+  * {
+    font-size: smaller; } }
+
+
+#content div.total {
+  display: none;
+  position: fixed;
+  top: 200px;
+  width: 200px;
+  list-style: none;
+  border: 1px solid black;
+  margin: 0;
+  margin-left: 720px;
+  padding: 5px;
+  table {
+    th {
+      color: black;
+      font-size: 1em;
+      border-bottom-color: black;
+      border-bottom-width: 1px;
+    }
+    tr.last th, tr.last td {
+      border-bottom-width: 0px;
+    }
+    td {
+      text-align: right; }
+    td.negative {
+      color: red; } } }
+
+#registered_attendees_form, #registered_groups_form {
+  .left {
+    float: left;
+  }
+  .middle {
+    display: inline;
+  }
+  .right {
+    float: right;
+  }
+}
 
 .placeholder {
   color: #999;
 }
 
-.avatar {
-  float: right;
-  text-align: right;
+.payments {
+  margin: 20px 0px 20px;
+  overflow: hidden;
+  .payment_type {
+    &.left {
+      @include grid(4);
+      margin: 0px;
+      float: left;
+    }
+    &.right {
+      @include grid(8);
+      margin: 0px;
+      float: right;
+      border-left: 1px solid #cccccc;
+      padding-left: 10px;
+    }
+    h4 {
+      font-size: 14px;
+    }
 
-  img {
-    border-radius: 5px;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
+    pre {
+      padding: 10px 0px 10px 10px;
+    }
   }
-
-  .tip {
-    color: #999;
-    font-style: italic;
-    font-size: 8pt;
-    width: 150px;
-  }
-}
-
-.hint {
-  color: #666666;
-  font-style: italic;
 }

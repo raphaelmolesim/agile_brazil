@@ -1,67 +1,36 @@
 # encoding: UTF-8
 require 'spec_helper'
-
+ 
 describe ReviewsController do
-  before(:each) do
-    @early_review ||= FactoryGirl.create(:early_review)
-    @final_review ||= FactoryGirl.create(:final_review, :reviewer => @early_review.reviewer)
-
-    sign_in @early_review.reviewer
-    disable_authorization
-
-    @conference = Conference.current
-    Conference.stubs(:current).returns(@conference)
-    @conference.stubs(:in_early_review_phase?).returns(false)
-  end
-
-  describe "with view rendering", :render_views => true do
-    render_views
-
-    it "index early reviews for organizer should work" do
-      get :organizer, :session_id => Session.first, :type => 'early'
-    end
-
-    it "index final reviews for organizer should work" do
-      get :organizer, :session_id => Session.first
-    end
-
-    it "index early reviews for author should work" do
-      get :index, :session_id => Session.first, :type => 'early'
-    end
-
-    it "index final reviews for author should work" do
-      get :index, :session_id => Session.first
-    end
-
-    it "show should work for early review" do
-      get :show, :id => @early_review.id, :session_id => @early_review.session
-    end
-
-    it "show should work for final review" do
-      get :show, :id => @final_review.id, :session_id => @final_review.session
-    end
-
-    it "new should work for early review" do
-      @conference.expects(:in_early_review_phase?).returns(true)
-      get :new, :session_id => Session.first
-    end
-
-    it "show should work for final review" do
-      @conference.expects(:in_early_review_phase?).returns(false)
-      get :new, :session_id => Session.first
-    end
-  end
+  render_views
 
   it_should_require_login_for_actions :index, :show, :new, :create
 
-  it "new action should set reviewer" do
-    get :new, :session_id => Session.first
-    assigns(:review).reviewer.should == @final_review.reviewer
+  before(:each) do
+    @review ||= FactoryGirl.create(:review)
+    sign_in @review.reviewer
+    disable_authorization
   end
-
-  it "new action should set proposal_duration to true" do
+  
+  it "index action should render author template" do
+    get :index, :session_id => Session.first
+    response.should render_template(:author)
+  end
+  
+  it "organizer action should render organizer template if user is organizer" do
+    get :organizer, :session_id => Session.first
+    response.should render_template(:organizer)
+  end
+  
+  it "show action should render show template" do
+    get :show, :id => Review.first, :session_id => Session.first
+    response.should render_template(:show)
+  end
+  
+  it "new action should render new template" do
     get :new, :session_id => Session.first
-    assigns(:review).proposal_duration.should be_true
+    response.should render_template(:new)
+    assigns(:review).reviewer.should == @review.reviewer
   end
 
   it "create action should render new template when model is invalid" do
@@ -71,18 +40,10 @@ describe ReviewsController do
     post :create, :review => {}, :session_id => Session.first
     response.should render_template(:new)
   end
-
-  it "create action should redirect when final review is valid" do
-    @conference.expects(:in_early_review_phase?).returns(false)
-    FinalReview.any_instance.expects(:valid?).returns(true)
+  
+  it "create action should redirect when model is valid" do
+    Review.any_instance.stubs(:valid?).returns(true)
     post :create, :session_id => Session.first
-    response.should redirect_to(session_review_path(@conference, assigns(:session), assigns(:review)))
-  end
-
-  it "create action should redirect when early review is valid" do
-    @conference.stubs(:in_early_review_phase?).returns(true)
-    EarlyReview.any_instance.expects(:valid?).returns(true)
-    post :create, :session_id => Session.first
-    response.should redirect_to(session_review_path(@conference, assigns(:session), assigns(:review)))
+    response.should redirect_to(session_review_url(assigns(:session), assigns(:review)))
   end
 end

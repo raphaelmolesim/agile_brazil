@@ -1,4 +1,5 @@
 # encoding: UTF-8
+# encoding: utf-8
 require 'spec_helper'
 
 describe Organizer do
@@ -10,7 +11,7 @@ describe Organizer do
 
     it { should_not allow_mass_assignment_of :id }
   end
-
+  
   it_should_trim_attributes Organizer, :user_username
 
   context "validations" do
@@ -19,12 +20,11 @@ describe Organizer do
     it { should validate_presence_of :conference_id }
 
     context "uniqueness" do
-      before { FactoryGirl.create(:organizer) }
-      it { should validate_uniqueness_of(:track_id).scoped_to(:conference_id, :user_id).with_message(I18n.t("activerecord.errors.models.organizer.attributes.track_id.taken")) }
+      before { FactoryGirl.create(:organizer) }      
+      it { should validate_uniqueness_of(:track_id).scoped_to(:conference_id, :user_id).with_message("usuário já organiza essa trilha") }
     end
 
-    should_validate_existence_of :user, :conference
-    should_validate_existence_of :track, :allow_blank => true
+    should_validate_existence_of :user, :track, :conference
 
     context "user" do
       it "should be a valid user" do
@@ -33,18 +33,9 @@ describe Organizer do
         organizer.should_not be_valid
         organizer.errors[:user_username].should include(I18n.t("activerecord.errors.messages.existence"))
       end
-    end
-
-    context "track" do
-      it "should match the conference" do
-        track = FactoryGirl.create(:track)
-        organizer = FactoryGirl.build(:organizer, :track => track, :conference => Conference.first)
-        organizer.should_not be_valid
-        organizer.errors[:track_id].should include(I18n.t("errors.messages.invalid"))
-      end
-    end
+    end      
   end
-
+  
   context "associations" do
     it { should belong_to :user }
     it { should belong_to :track }
@@ -55,12 +46,12 @@ describe Organizer do
         @organizer = FactoryGirl.create(:organizer)
         @user = FactoryGirl.create(:user)
       end
-
+      
       it "should set by username" do
         @organizer.user_username = @user.username
         @organizer.user.should == @user
       end
-
+    
       it "should not set if username is nil" do
         @organizer.user_username = nil
         @organizer.user.should be_nil
@@ -75,68 +66,72 @@ describe Organizer do
         @organizer.user_username = "  "
         @organizer.user.should be_nil
       end
-
+      
       it "should provide username from association" do
         @organizer.user_username = @user.username
         @organizer.user_username.should == @user.username
       end
     end
   end
-
+  
   shared_examples_for "organizer role" do
     it "should make given user organizer role after created" do
-      subject.should_not be_organizer
-      organizer = FactoryGirl.create(:organizer, :user => subject)
-      subject.should be_organizer
-      subject.reload.should be_organizer
+      @user.should_not be_organizer
+      organizer = FactoryGirl.create(:organizer, :user => @user)
+      @user.should be_organizer
+      @user.reload.should be_organizer
     end
-
+    
     it "should remove organizer role after destroyed" do
-      organizer = FactoryGirl.create(:organizer, :user => subject)
-      subject.should be_organizer
+      organizer = FactoryGirl.create(:organizer, :user => @user)
+      @user.should be_organizer
       organizer.destroy
-      subject.should_not be_organizer
-      subject.reload.should_not be_organizer
+      @user.should_not be_organizer
+      @user.reload.should_not be_organizer
     end
-
+    
     it "should keep organizer role after destroyed if user organizes other tracks" do
-      other_organizer = FactoryGirl.create(:organizer, :user => subject)
-      track = FactoryGirl.create(:track, :conference => other_organizer.conference)
-      organizer = FactoryGirl.create(:organizer, :user => subject, :track => track, :conference => other_organizer.conference)
-      subject.should be_organizer
+      other_organizer = FactoryGirl.create(:organizer, :user => @user)
+      organizer = FactoryGirl.create(:organizer, :user => @user, :conference => other_organizer.conference)
+      @user.should be_organizer
       organizer.destroy
-      subject.should be_organizer
-      subject.reload.should be_organizer
+      @user.should be_organizer
+      @user.reload.should be_organizer
     end
-
+    
     it "should remove organizer role after update" do
-      organizer = FactoryGirl.create(:organizer, :user => subject)
+      organizer = FactoryGirl.create(:organizer, :user => @user)
       another_user = FactoryGirl.create(:user)
       organizer.user = another_user
       organizer.save
-      subject.reload.should_not be_organizer
+      @user.reload.should_not be_organizer
       another_user.should be_organizer
     end
 
     it "should keep organizer role after update if user organizes other tracks" do
-      other_organizer = FactoryGirl.create(:organizer, :user => subject)
-      track = FactoryGirl.create(:track, :conference => other_organizer.conference)
-      organizer = FactoryGirl.create(:organizer, :user => subject, :track => track, :conference => other_organizer.conference)
-      another_user = FactoryGirl.create(:user)
+      other_organizer = FactoryGirl.create(:organizer, :user => @user)
+      organizer = FactoryGirl.create(:organizer, :user => @user, :conference => other_organizer.conference)
+      another_user = FactoryGirl.build(:user)
       organizer.user = another_user
       organizer.save
-      subject.reload.should be_organizer
+      @user.reload.should be_organizer
       another_user.should be_organizer
     end
   end
-
+  
   context "managing organizer role for normal user" do
-    subject { FactoryGirl.create(:user) }
+    before(:each) do
+      @user = FactoryGirl.create(:user)
+    end
+    
     it_should_behave_like "organizer role"
   end
 
   context "managing organizer role for simple user" do
-    subject { FactoryGirl.create(:simple_user) }
+    before(:each) do
+      @user = FactoryGirl.create(:simple_user)
+    end
+    
     it_should_behave_like "organizer role"
   end
 end

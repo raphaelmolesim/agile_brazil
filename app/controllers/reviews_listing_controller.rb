@@ -3,32 +3,25 @@ class ReviewsListingController < ApplicationController
   def index
     respond_to do |format|
       format.html do
-        redirect_to reviewer_reviews_path(@conference)
+        redirect_to :action => :reviewer
       end
       format.js do
-        if @conference.in_early_review_phase?
-          sessions_to_review = Session.for_review_in(@conference).count
-          sessions_without_reviews = Session.for_review_in(@conference).with_incomplete_early_reviews.count
-          stats = {
-            'required_reviews' => sessions_to_review,
-            'total_reviews' => sessions_to_review - sessions_without_reviews
-          }
-        else
-          stats = {
-            'required_reviews' => Session.for_review_in(@conference).count * 3,
-            'total_reviews' => FinalReview.for_conference(@conference).count
-          }
-        end
-
-        render :json => stats
+        render :json => {
+          'required_reviews' => Session.for_conference(current_conference).without_state(:cancelled).count * 3,
+          'total_reviews' => Review.for_conference(current_conference).count
+        }
       end
     end
   end
-
+  
   def reviewer
     direction = params[:direction] == 'up' ? 'ASC' : 'DESC'
     column = sanitize(params[:column].presence || 'created_at')
     order = "reviews.#{column} #{direction}"
-    @reviews = current_user.reviews.for_conference(@conference).page(params[:page]).order(order)
+    paginate_options ||= {}
+    paginate_options[:page] ||= (params[:page] || 1)
+    paginate_options[:per_page] ||= (params[:per_page] || 10)
+    paginate_options[:order] ||= order
+    @reviews = current_user.reviews.for_conference(current_conference).paginate(paginate_options)
   end
 end

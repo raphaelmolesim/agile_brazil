@@ -1,28 +1,28 @@
 # encoding: UTF-8
+# Sample localization file for English. Add more files in this directory for other locales.
+# See https://github.com/svenfuchs/rails-i18n/tree/master/rails%2Flocale for starting points.
+
 en:
 
-  errors:
-    messages:
-      same_author: "can't be the same as author"
-      incomplete: "user is currently not an author"
-      experience_report_talk_duration: "can only be 50 minutes"
-      non_lightning_talk_duration: "can only be 50 or 110 minutes"
-      talk_duration: "can only be 50 minutes"
-      hands_on_duration: "can only be 110 minutes"
-      lightning_talk_duration: "can only be 10 minutes"
-      experience_report_session_type: "can only be a Talk"
-      email_format: "should look like an email address"
-      username_format: "please use only letters, numbers, spaces, and .-_@"
-      constant: "can't be changed"
+  # ActiveRecord
   activerecord:
     errors:
       messages:
         existence: "does not exist"
+        same_author: "can't be the same as author"
+        incomplete: "user is currently not an author"
+        experience_report_talk_duration: "can only be 50 minutes"
+        non_lightning_talk_duration: "can only be 50 or 110 minutes"
+        lightning_talk_duration: "can only be 10 minutes"
+        experience_report_session_type: "can only be a Talk"
+        email_format: "should look like an email address"
+        username_format: "please use only letters, numbers, spaces, and .-_@"
+        constant: "can't be changed"
       models:
         user:
           attributes:
             phone:
-              invalid: "invalid phone number. Please use only number, spaces, and .-+() (e.g. \"+55 11 2222-3333\")"
+              invalid: "please use only number, spaces, and .-+()"
             email:
               taken: "another user has an account with the same e-mail address. Please enter another"
               invalid: "should be a valid e-mail address"
@@ -43,13 +43,24 @@ en:
           preferences: "at least one track has to be accepted"
         preference:
           organizer_track: "cannot review track that is organizing"
-        early_review:
-          inclusion: "cannot be blank"
-        final_review:
+        review:
           inclusion: "cannot be blank"
         review_decision:
           cant_accept: "cannot be accepted"
           cant_reject: "cannot be rejected"
+        attendee:
+          attributes:
+            courses:
+              compatible: "cannot attend all chosen courses. Please check the <a href='http://www.agilebrazil.com/2011/en/programacao.php' target='_blank'>program</a>."
+              limit_reached: "the %{course} course has reached the limit number of participants."
+            registration_type_id:
+              free_not_allowed: "Inscrição gratuita não está disponível."
+            email:
+              free_not_allowed: "Inscrições gratuitas só estão disponíveis para o email do palestrante."
+        registration_group:
+          attributes:
+            total_attendees:
+              incomplete: "doesn't have %{total} registered attendees"
 
   formtastic:
     :yes: "Yes"
@@ -65,6 +76,12 @@ en:
       to_authors: "Information to the authors"
       details: "Details"
       review_decision: "Final decision"
+      attendee_personal: "Personal details"
+      attendee_address: "Contact details"
+      attendee_courses: "Course registration"
+      attendee_payment: "Payment details"
+      registration_group_info: "Company details"
+      registration_group_contact: "Contact details"
     labels:
       user:
         first_name: "First name"
@@ -82,8 +99,6 @@ en:
         wants_to_submit: "I want to submit sessions for the conference"
         password: "Password"
         current_password: "Current password"
-        twitter_username: "Twitter username"
-        default_locale: "Preferred language"
         new:
           password: "Password"
           password_confirmation: "Confirm password"
@@ -125,10 +140,6 @@ en:
         image_agreement: "By accepting this term, I grant the organization of Agile Brazil the right of recording and reproducing all or part of the technical content presented by me during the conference for non-commercial purposes, in any form or medium, without any cost for the event."
         author_confirmed: "Author confirmation"
         author_image_agreement: "Image rights"
-      session_filter:
-        tags: "Tags"
-        username: "Author (username)"
-        track_id: "Track"
       comment:
         comment: "Your comment"
       organizer:
@@ -142,27 +153,8 @@ en:
         reviewer_agreement: "I read the terms and acknowledge my responsibilities as a reviewer"
       preference:
         audience_level_id: "Knowledge level"
-      early_review:
-        author_agile_xp_rating_id: "How do you rate the author(s)' experience with the topics relevant to the chosen track?"
-        author_proposal_xp_rating_id: "How do you rate the author(s)' experience with the proposal subject?"
-        proposal_track: "Is the track adequate?"
-        proposal_level: "Is the audience level adequate?"
-        proposal_type: "Is the session type adequate?"
-        proposal_duration: "Is the duration adequate?"
-        proposal_limit: "Is the participants limit adequate?"
-        proposal_abstract: "Is the summary coherent with the full description?"
-        proposal_quality_rating_id: "How do you rate the given material's clarity, objectivity and writing?"
-        proposal_relevance_rating_id: "How do you rate the relevance of the subject to the event?"
-        reviewer_confidence_rating_id: "How confident are you to review the subject of this proposal?"
-        comments_to_organizers: "Please enter any comments relevant to the program committee."
-        comments_to_authors: "Please enter any comments relevant to the authors."
-        authors: "Authors"
-        session: "Session"
-        recommendation: "Recommendation"
-        confidence: "Reviewer's confidence"
-        reviewer: "Reviewer"
-      final_review:
-        author_agile_xp_rating_id: "How do you rate the author(s)' experience with the topics relevant to the chosen track?"
+      review:
+        author_agile_xp_rating_id: "How do you rate the author(s)' experience with agile methods?"
         author_proposal_xp_rating_id: "How do you rate the author(s)' experience with the proposal subject?"
         proposal_track: "Is the track adequate?"
         proposal_level: "Is the audience level adequate?"
@@ -185,45 +177,106 @@ en:
       review_decision:
         outcome_id: "Organizer's decision"
         note_to_authors: "Comments to the authors"
+      attendee:
+        registration_type_id: "Type of Registration"
+        first_name: "First name"
+        last_name: "Last name"
+        full_name: "Name"
+        email: "E-mail address"
+        email_confirmation: "Confirm e-mail address"
+        phone: "Phone"
+        country: "Country"
+        state: "State"
+        city: "City"
+        organization: "Organization / Institution"
+        badge_name: "Name for badge"
+        cpf: "Identification number"
+        gender: "Gender"
+        twitter_user: "Twitter username"
+        address: "Address"
+        neighbourhood: "Address 2"
+        zipcode: "Zip Code"
+        status: "Status"
+        courses: "Courses"
+        group: "Company"
+        registration_date: "Registration Date"
+        payment_agreement: "I confirm that the participant made the payment of the above mentioned amount. The system will notify the participant that his/her registration to the conference is confirmed."
+        notes: "Notes"
+        only_with_notes: "Show only results with notes"
+        total: "Amount"
+      registration_group:
+        name: "Organization / Institution name"
+        contact_name: "Contact name"
+        contact_email: "E-mail address"
+        contact_email_confirmation: "Confirm e-mail address"
+        phone: "Contact phone"
+        fax: "Fax"
+        country: "Country"
+        state: "State"
+        city: "City"
+        address: "Address"
+        neighbourhood: "Address 2"
+        zipcode: "Zip Code"
+        total_attendees: "Total number of participants"
+        registered_attendees: "Registered participants"
+        status: "Status"
+        payment_agreement: "I confirm that the company has paid the above amount. The system will notify all participants in this company that their registrations to the conference are confirmed."
+        notes: "Notes"
+        total: "Amount"
+      payment_notification:
+        transaction_id: "Transaction ID"
+        paid_at: "Payment date"
+        payer_email: "PayPal e-mail"
+        settle_amount: "Total amount paid"
+        notes: "Notes"
     hints:
       user:
-        email: "Main e-mail address for contact purposes. We also use your e-mail to fetch your profile image from Gravatar. If you want to change your profile picture, <a href='http://en.gravatar.com/site/signup/' target='_blank'>get your gravatar</a>."
+        email: "Main e-mail address for contact purposes."
         phone: "Preferably your mobile cellphone number."
-        password: "At least 3 characters."
+        password: "At least 4 characters."
         country: "Country of residence, collected for statistical purpose."
         state: "State of residence, collected for statistical purpose."
         city: "City of residence, collected for statistical purpose."
         organization: "Name of company or organization that you will represent, collected for statistical purpose."
         website_url: "Personal or organization's website to be used as reference by the program committee. If you submit a session proposal, this website might be visited when evaluating your session."
         bio: "Tell us about your academic experience, professional experience, and participation in the community, focusing on Agile. This will be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='/syntax_help?locale=en' target='_blank'>reference guide</a> for details."
-        wants_to_submit: "Leave this blank if you only want to leave comments on other users' sessions. You can change your mind later, by editing your profile."
+        wants_to_submit: "Leave this blank if you only want to vote or leave comments on other users' sessions. You can change your mind later, by editing your profile."
         current_password: "To make any changes to your profile, please confirm your current password."
-        twitter_username: "Your twitter username, without the '@' prefix (e.g. 'twitter_user' instead of '@twitter_user')"
-        default_locale: "We will display the site and send you e-mails in your preferred language"
       session:
-        title: "(at most 100 characters)"
-        track_id: "A detailed description of each track can be found <a href='%{year}/tracks?locale=en' target='_blank'>here</a>. For Experience Reports, only Talks lasting 50 minutes or Lightning Talks lasting 10 minutes will be accepted."
-        session_type_id: "A detailed description of session types can be found <a href='%{year}/session_types?locale=en' target='_blank'>here</a>."
-        duration_mins: "Talks should be 50 minutes long, Hands on sessions should be 110 minutes long, and Lightning Talks should be 10 minutes long."
-        audience_level_id: "Indicate the appropriate experience level of your audience. A description of each level can be found <a href='%{year}/audience_levels?locale=en' target='_blank'>here</a>."
-        audience_limit: "If your session is Hands On, indicate if it has a maximum number of participants."
-        target_audience: "Indicate your target audience, for example: developers, new to Agile, analysts, architects, QAs, project managers, executives.<br/>(at most 200 characters)"
-        summary: "Summary of your session to be displayed in the program. It should match the complete description of this activity. This field will not be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='%{year}/syntax_help?locale=en' target='_blank'>reference guide</a> for details.<br/>(at most 800 characters)"
-        description: "Complete description of your session. Be clear on the proposed topic and your objectives. This field will be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='%{year}/syntax_help?locale=en' target='_blank'>reference guide</a> for details.<br/>(at most 2400 characters)"
-        mechanics: "Required for Hands On sessions. Describe how you will run your session and how you will interact with the audience. This field will be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='%{year}/syntax_help?locale=en' target='_blank'>reference guide</a> for details.<br/>(at most 2400 characters)"
-        benefits: "These are the benefits and learning outcomes that the participants will take from attending your session. What are they going to learn, experience, and share. Also describe the unique aspects of your session and its relevancy to the wider community. This field will be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='%{year}/syntax_help?locale=en' target='_blank'>reference guide</a> for details.<br/>(at most 400 characters)"
-        experience: "Describe your experience on the subject of this session. Focus on your actions, your context, and your inspirations. This field will be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='%{year}/syntax_help?locale=en' target='_blank'>reference guide</a> for details.<br/>(at most 400 characters)"
+        track_id: "A detailed description of each track can be found <a href='/tracks?locale=en' target='_blank'>here</a>. For Experience Reports, only Talks lasting 50 minutes or Lightning Talks lasting 10 minutes will be accepted."
+        session_type_id: "A detailed description of session types can be found <a href='/session_types?locale=en' target='_blank'>here</a>."
+        duration_mins: "If you are proposing a Talk, please indicate its duration. For Tutorials and Workshops we recommend a duration of 110 minutes."
+        audience_level_id: "Indicate the appropriate experience level of your audience. A description of each level can be found <a href='/audience_levels?locale=en' target='_blank'>here</a>."
+        audience_limit: "If your session is a Tutorial or Workshop, indicate if it has a maximum number of participants."
+        target_audience: "Indicate your target audience, for example: developers, new to Agile, analysts, architects, QAs, project managers, executives."
+        summary: "Summary of your session to be displayed in the program. It should match the complete description of this activity. This field will not be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='/syntax_help?locale=en' target='_blank'>reference guide</a> for details."
+        description: "Complete description of your session. This field will be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='/syntax_help?locale=en' target='_blank'>reference guide</a> for details."
+        mechanics: "Required for Workshops. Describe how you will run your session with the audience. This field will be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='/syntax_help?locale=en' target='_blank'>reference guide</a> for details."
+        benefits: "These are the benefits and learning outcomes that the participants will take from attending your session. This field will be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='/syntax_help?locale=en' target='_blank'>reference guide</a> for details."
+        experience: "Describe your experience on the subject of this session. This field will be used to evaluate your session.<br/>In this field, a limited markup syntax is allowed. See the <a href='/syntax_help?locale=en' target='_blank'>reference guide</a> for details."
         second_author_username: "Please provide the second author's username in this field. The second author must also be a registered user. If you don't know the second author's username or he/she is not registered yet, leave it blank and edit your session proposal before the submission deadline."
-        keyword_list: "Separate keywords with commas.<br/>(at most 10 keywords)"
+        keyword_list: "Separate keywords with commas."
       comment:
-        comment: "In this field, a limited markup syntax is allowed. See the <a href='%{year}/syntax_help?locale=en' target='_blank'>reference guide</a> for details."
+        comment: "In this field, a limited markup syntax is allowed. See the <a href='/syntax_help?locale=en' target='_blank'>reference guide</a> for details."
       reviewer:
         user_username: "Please provide the reviewer's username in this field."
-      early_review:
-        comments_to_authors: "Please provide any meaningful feedback for the authors here, explaining the reason for accepting or rejecting the session. What questions are still remaining? What information would you like to have seen?"
-      final_review:
+      review:
         comments_to_authors: "Please provide any meaningful feedback for the authors here, explaining the reason for accepting or rejecting the session. What questions are still remaining? What information would you like to have seen?"
         justification: "Explain to the organizers the reason for your recommendation. The authors won't have access to this explanation."
+      attendee:
+        registration_type_id: "Indicate whether your registration is normal or student. The student must prove his enrollment in an institution of higher education to have access to discounted values."
+        badge_name: "The name you want to print in your badge. If blank, your full name will be used instead."
+        organization: "Name of the organization you represent or institution where you study. This information will appear in your badge."
+        cpf: "Leave blank if you are not Brazilian."
+        twitter_user: "Your <a href='http://www.twitter.com' target='_blank'>twitter</a> username (without the '@' character - e.g. 'agilebrazil'), if given, will appear in your badge. Leave blank if you do not want that."
+        email_confirmation: "Verify that your e-mail address is correct. This will be the main communication chanel about your registration."
+        courses: "Please select the courses you would like to attend. Each course has a limit of 30 participants, that will be selected based on the order of registration and payment confirmation. To secure your place on the course, you must make the payment and send the voucher in a maximum of 5 days.<br/><br/>** Course has already reached the limit number of participants. To register interest in one of these courses, and add your nome to a wait list, please send an e-mail to <a href='mailto:atendimento@resultonline.com.br'>atendimento@resultonline.com.br</a> cc'ing <a href='mailto:result@resultonline.com.br'>result@resultonline.com.br</a>."
+        notes: "Leave any notes or observations that you think are relevant, for future reference (e.g. payment confirmation number, or any special information about this participant)"
+      registration_group:
+        cnpj: "Leave blank if this is not a Brazilian company / organization."
+        state_inscription: "Leave blank if this is not a Brazilian company / organization."
+        municipal_inscription: "Leave blank if this is not a Brazilian company / organization."
+        total_attendees: "A minimum of 5 participants is required for company registration. They cannot be registered as students. Proof that all participants in this group work for the registered company will be required."
     actions:
       signup: "Register new account"
       reset_password: "Reset password"
@@ -242,8 +295,12 @@ en:
       submit_review_decision: "Submit organizer's decision"
       confirm_session: "Confirm attendance"
       withdraw_session: "Withdraw session"
+      new_registration: "Submit registration"
+      new_registration_group: "Register participants"
+      confirm_registered_attendee: "Confirm Payment"
+      update_pending_attendee: "Update Price"
+      paid_pending_attendee: "Payment Received"
       search: "Search"
-      filter_session: "Filter sessions"
 
   # Custom messages
   title:
@@ -267,6 +324,11 @@ en:
     new_review: "New review for session '%{session}'"
     review_decision: "Review decision for session '%{session}'"
     accepted_sessions: "Accepted Sessions"
+    registration: "New registration"
+    registration_group_new_attendee: "New registration (%{current_attendee}/%{total_attendees}) on company %{registration_group}"
+    registration_group: "New company registration"
+    attendee: "Registration details"
+    attendees_summary: "Registration summary"
 
   actions:
     submission_date: "Submission deadline"
@@ -296,14 +358,24 @@ en:
       session: "Sessions"
       review: "Review process"
       user: "Profile"
+      registration: "Registration"
     review_decision: "Decide"
     create_review_decision: "New Decision"
     edit_review_decision: "Edit Decision"
+    new_registration: "Individual"
+    new_speaker_registration: "Speaker"
+    new_registration_group: "Company"
+    new_sponsor_group: "Sponsor"
+    registered_attendees: "Manage registrations"
+    registered_groups: "Manage companies"
+    pending_attendees: "Update pending registrations"
+    attendees_summary: "Registration summary"
 
   text:
+    for_user: "Showing sessions for user: <strong>%{name}</strong>"
+    tagged_with: "Showing sessions tagged with: <strong>%{tag}</strong>"
     lost_password:
       instructions: "Please fill out the e-mail address used when you registered and your username and instructions to reset your password will be emailed to you:"
-    private_field: "Private field: not visible in the public profile"
 
   footer:
     help: "If you have questions, issues, or suggestions, send us an email to <a href='mailto:programa@agilebrazil.com'>programa@agilebrazil.com</a>"
@@ -345,16 +417,34 @@ en:
     review:
       create:
         success: "Review recorded successfully."
-
-  conference:
-    dates:
-      call_for_papers: "Call for Submissions"
-      submissions_open: "Release of session submission form"
-      presubmissions_deadline: "Submission deadline for pre-review"
-      prereview_deadline: "Feedback to authors from pre-review"
-      submissions_deadline: "Final submission deadline"
-      author_notification: "Acceptance notification"
-      author_confirmation: "Session confirmation deadline to selected authors"
+    attendee:
+      create:
+        success: "Registration submited successfully. Confirmation and payment instructions were sent to you via e-mail."
+        free_not_allowed: "Registration failed. Free registration is not available. Please select another registration type"
+      news: "<a href='/registration_groups/new?locale=en'>Click here</a> for company registration."
+      mail:
+        fail: "There was a problem while sending your confirmation email. Your registration was received but we could not deliver the confirmation email. We will try later but if you do not receive it in 24 hours, please contact us at contato@agilebrazil.com."
+      registration_group:
+        complete: "This company already has %{total_attendees} registered participants."
+        success: "Registration submited successfully. Please register the next participant."
+    registration_group:
+      create:
+        success: "Company registered successfully. If you do not have all information at hand to register all %{total_attendees} attendees, or if you would like each participant to fill out their own registration form, save or share the following URL: <a href='%{attendee_url}'>%{attendee_url}</a>"
+      news: "<a href='/attendees/new?locale=en'>Click here</a> for individual registration."
+    registration:
+      attendee: "By registering for the conference, I acknowledge that my name and email will be shared with the sponsors of the conference."
+      group: "I acknowledge that the name and email of all participants that register for the conference will be shared with the sponsors of the conference."
+    registered_attendees:
+      confirm:
+        success: "Registration confirmed successfully. The participant was notified by email."
+      update:
+        success: "Inscrição atualizada com sucesso."
+    pending_attendees:
+      confirm:
+        success: "Registration updated successfully."
+    registered_groups:
+      confirm:
+        success: "Registration confirmed successfully. The company contact was notified by email."
 
   session_types:
     tutorial:
@@ -364,14 +454,11 @@ en:
       title: "Workshop"
       description: "Sessions highly interactive and participative, allowing the attendees to develop knowledge in a practical way. This track will include topics related with innovation, conflict resolution, leadership, etc. A workshop is an opportunity for conference attendees to learn from each other about a relevant topic, generate ideas that expand a new technique or practice, or discuss new ideas to be shared with the community."
     talk:
-      title: "Lecture"
-      description: "Lectures are sessions addressing specific topics and directed to those who want to enhance their knowledge in agile methods and best practices."
+      title: "Talk"
+      description: "Presentations aimed at those people who are looking for a topic to increase their knowledge about the Agile methodologies and the best practices used by the Agile community."
     lightning_talk:
       title: "Lightning Talk"
       description: "Lightning talks are short talks with, at most, 8 minutes length plus 2 minutes for questions (without slides) whose objective is to present an idea in a quick and concise way. The use of slides is optional. A well-known format for lightning talks is Pecha Kucha, in which the presenter has 20 slides switching automatically every 20 seconds, summing up to a 6 minutes and 40 seconds presentation."
-    hands_on:
-      title: "Hands On"
-      description: "Hands on sessions are workshops and tutorials where the attendants are expected to take part in an activity and learn from practice. A workshop is an opportunity to learn from other attendees or to discuss new ideas that will be shared with the community. Tutorials are instructor-led interactive classes designed to provide participants with practical knowledge they can use right away on Agile projects."
 
   tracks:
     general_interest:
@@ -385,21 +472,7 @@ en:
       description: "Dedicated to professionals working with agile methodologies or are interested in the technical quality of software products. You will find tutorials, workshops and lectures addressing programming, continuous integration and automated testing topics and the use of electronic tools to support agile development."
     experience_reports:
       title: "Experience Reports"
-      description: "Those who want to share their real experiences with agile methods in projects, transitions, courses or communities are welcome here. The reports on this track invite sharing pragmatic tips that can inspire other people and teams."
-    development_tests:
-      title: "Development and Tests"
-      description: "This track gathers sessions related to agile methods and practices for software development and testing. Programming, continuous integration, test automation, acceptance and integration testing and tools will be featured in this track's lectures and workshops. Devops sessions are also welcome in this category."
-    analysis_planning:
-      title: "Analysis and Planning"
-      description: "Agile project analysis and planning are the core of this track. Sessions will cover themes as business analysis, requirements analysis, estimation and prioritization techniques, release planning and implementation strategies for projects."
-    management_culture:
-      title: "Management and Culture"
-      description: "This track is about project and team management. Expected topics include building teams, project facilitation, coaching, organizational culture, agile values and principles, democratic management, self-organization, product, processes and projects management."
-    innovation_entrepreneurship:
-      title: "Innovation and Entrepreneurship"
-      description: "This is the track for those who seek innovating and endeavoring, be it as a collaborator or as an entrepreneur. On this track, you will find sessions about Lean Startup, Customer Development, Design Thinking, Service Design, Business Model Generation, Bootstrapping and many other subjects that relate agile methods to innovation processes."
-    guest_session:
-      title: "Special Guest"
+      description: "An experience report captures the story of a real agile experience, being projects, transitions, courses or communities. These reports allow practitioners to share their practical advice and guidance with other people and teams."
 
   audience_levels:
     beginner:
@@ -419,16 +492,22 @@ en:
       subject: "Password reset"
     session_submitted:
       subject: "%{conference_name} session proposal submitted"
-    comment_submitted:
-      subject: "New comment for your session '%{session_name}'"
-    early_review_submitted:
-      subject: "Early review submitted for your session '%{session_name}'"
     reviewer_invitation:
       subject: "Invitation to be part of %{conference_name} review committee"
     session_accepted:
       subject: "Notification from the Program Committee of %{conference_name}"
     session_rejected:
       subject: "Notification from the Program Committee of %{conference_name}"
+    registration_pending:
+      subject: "Registration request to %{conference_name} sent"
+    registration_confirmed:
+      subject: "Registration confirmed for %{conference_name}"
+    registration_group_pending:
+      subject: "Company registration request to %{conference_name} sent"
+    registration_group_confirmed:
+      subject: "Registration confirmed for %{conference_name}"
+    registration_reminder:
+      subject: "New payment option via Paypal for registration for %{conference_name}"
 
   reviewer:
     state:
@@ -460,8 +539,6 @@ en:
     proposal_relevance_rating: "Relevance to the event"
     comments_to_organizers: "Comments to organizers"
     comments_to_authors: "Comments to authors"
-    early_review: "Early Review"
-    final_review: "Final Review"
 
   rating:
     high:
@@ -489,21 +566,59 @@ en:
     reject:
       title: "Rejected"
 
-  all_hands:
-    opening:
-      title: "Opening"
-    closing:
-      title: "Closing"
-    lunch:
-      title: "Lunch"
-    coffee_break:
-      title: "Coffee Break"
-    registration:
-      title: "Registration"
-
   gender:
     male: "Male"
     female: "Female"
+
+  registration_total:
+    title: "Total Registration Amount"
+    title_partial: "Partial Registration Amount"
+    base_price: "Registration"
+    courses: "Courses"
+    discount: "Discount"
+    total: "Total"
+
+  registration_type:
+    student: "Student"
+    group: "Company"
+    individual: "Individual"
+    free: "Free"
+
+  registration:
+    quantity: "Quantity"
+    status: "Registration status on %{date}"
+
+  course:
+    csm:
+      name: "CSM"
+      full_name: "Certified Scrum Master"
+    cspo:
+      name: "CSPO"
+      full_name: "Certified Scrum Product Owner"
+    lean:
+      name: "Lean"
+      full_name: "Introduction to Lean Thinking"
+    tdd:
+      name: "TDD"
+      full_name: "TDD: from basic to advanced"
+    psm:
+      name: "PSM"
+      full_name: "Professional Scrum Master"
+
+  attendee:
+    status:
+      pending: "Pending"
+      confirmed: "Confirmed"
+      paid: "Payment received"
+      all: "All"
+
+  registration_group:
+    status:
+      incomplete: "Incomplete"
+      complete: "Pending"
+      paid: "Payment received"
+      confirmed: "Confirmed"
+      all: "All"
 
   generic:
     or: "or"
@@ -517,21 +632,13 @@ en:
     sort_by: "Sort %{direction}"
     sort_up: "ascendent"
     sort_down: "descendent"
-    show: "Show"
-    hide: "Hide"
-    char_remaining: "remaining: "
-    all: "All"
-    room: "Room"
-
-  time:
-    formats:
-      hour_minute: "%H:%M"
+    show: "Show %{target}"
+    hide: "Hide %{target}"
+    registration_id: "Registration number"
 
   will_paginate:
     previous_label: "&laquo; Previous"
     next_label: "Next &raquo;"
-    page_gap: "&hellip;"
 
   tips:
     users_from_last_year: "<strong>Tip:</strong> Users from last year are still active. If you don't remember your username or password, use the link above to recover it."
-    change_gravatar: "To create or change your picture, <a href='http://en.gravatar.com/site/signup/%{email}' target='_blank'>get your Gravatar</a>."

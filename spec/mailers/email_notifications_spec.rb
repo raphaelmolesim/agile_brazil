@@ -1,482 +1,488 @@
 # encoding: UTF-8
+# encoding: utf-8
 require 'spec_helper'
 
 describe EmailNotifications do
-  subject { EmailNotifications }
-
-  around do |example|
-    I18n.with_locale(I18n.default_locale) do
-      ActionMailer::Base.deliveries = []
-      @conference = Conference.current
-      example.run
-      ActionMailer::Base.deliveries.clear
-    end
+  before do
+    ActionMailer::Base.deliveries = []
+    I18n.locale = I18n.default_locale
+    @conference = Conference.current || FactoryGirl.create(:conference)
   end
 
-  describe "user subscription e-mail" do
-    context "in pt" do
-      before(:each) do
-        @user = FactoryGirl.build(:user, :default_locale => 'pt')
-        EmailNotifications.send_welcome(@user)
-      end
-
-      it { should have_sent_email.with_subject("[localhost:3000] Cadastro realizado com sucesso") }
-      it { should have_sent_email.to(@user.email) }
-      it { should have_sent_email.with_body(/#{@user.username}/)}
-    end
-
-    context "in en" do
-      before(:each) do
-        @user = FactoryGirl.build(:user, :default_locale => 'en')
-        EmailNotifications.send_welcome(@user)
-      end
-
-      it { should have_sent_email.with_subject("[localhost:3000] Account registration") }
-      it { should have_sent_email.to(@user.email) }
-      it { should have_sent_email.with_body(/Username.*#{@user.username}/)}
-    end
+  after do
+    ActionMailer::Base.deliveries.clear
   end
 
-  describe "reset password instructions e-mail" do
-    context "in pt" do
-      before(:each) do
-        @user = FactoryGirl.build(:user, :default_locale => 'pt')
-        @user.send(:generate_reset_password_token!)
-        EmailNotifications.send_reset_password_instructions(@user)
-      end
-
-      it { should have_sent_email.with_subject("[localhost:3000] Recuperação de senha") }
-      it { should have_sent_email.to(@user.email) }
-      it { should have_sent_email.with_body(/\/password\/edit\?/)}
-      it { should have_sent_email.with_body(/#{@user.reset_password_token}/)}
-    end
-
-    context "in en" do
-      before(:each) do
-        @user = FactoryGirl.build(:user, :default_locale => 'en')
-        @user.send(:generate_reset_password_token!)
-        EmailNotifications.send_reset_password_instructions(@user)
-      end
-
-      it { should have_sent_email.with_subject("[localhost:3000] Password reset") }
-      it { should have_sent_email.to(@user.email) }
-      it { should have_sent_email.with_body(/\/password\/edit\?/)}
-      it { should have_sent_email.with_body(/#{@user.reset_password_token}/)}
-    end
-  end
-
-  describe "session submission e-mail" do
-    context "in pt" do
-      before(:each) do
-        @user = FactoryGirl.build(:author, :default_locale => 'pt')
-      end
-
-      context "with single author" do
-        before(:each) do
-          @session = FactoryGirl.build(:session, :author => @user)
-          EmailNotifications.send_session_submitted(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Proposta de sessão submetida para #{@conference.name}") }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/#{@session.author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}/)}
-        it { should have_sent_email.with_body(/#{I18n.l(@conference.submissions_deadline.to_date, :format => :long)}/)}
-      end
-
-      context "with second author" do
-        before(:each) do
-          @session = FactoryGirl.build(:session, :second_author => @user)
-          EmailNotifications.send_session_submitted(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Proposta de sessão submetida para #{@conference.name}") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/#{@session.author.full_name} &amp; #{@user.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}/)}
-        it { should have_sent_email.with_body(/#{I18n.l(@conference.submissions_deadline.to_date, :format => :long)}/)}
-      end
-    end
-
-    context "in en" do
-      before(:each) do
-        @user = FactoryGirl.build(:author, :default_locale => 'en')
-      end
-
-      context "with single author" do
-        before(:each) do
-          @session = FactoryGirl.build(:session, :author => @user)
-          EmailNotifications.send_session_submitted(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] #{@conference.name} session proposal submitted") }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/Dear #{@session.author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}/)}
-        it { should have_sent_email.with_body(/#{I18n.l(@conference.submissions_deadline.to_date, :format => :long, :locale => 'en')}/)}
-      end
-
-      context "with second author" do
-        before(:each) do
-          user = FactoryGirl.build(:author, :default_locale => 'en')
-          @session = FactoryGirl.build(:session, :author => user, :second_author => @user)
-          EmailNotifications.send_session_submitted(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] #{@conference.name} session proposal submitted") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/Dear #{@session.author.full_name} &amp; #{@user.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}/)}
-        it { should have_sent_email.with_body(/#{I18n.l(@conference.submissions_deadline.to_date, :format => :long, :locale => 'en')}/)}
-      end
-    end
-  end
-
-  describe "comment submission e-mail" do
-    context "in pt" do
-      before(:each) do
-        @user = FactoryGirl.build(:author, :default_locale => 'pt')
-      end
-
-      context "with single author" do
-        before(:each) do
-          @session = FactoryGirl.build(:session, :author => @user)
-          @comment = FactoryGirl.build(:comment, :commentable => @session)
-          EmailNotifications.send_comment_submitted(@session, @comment)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Novo comentário para sua sessão '#{@session.title}'") }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/#{@session.author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}.*#comments/)}
-        it { should have_sent_email.with_body(/#{@comment.comment}/)}
-      end
-
-      context "with second author" do
-        before(:each) do
-          @session = FactoryGirl.build(:session, :second_author => @user)
-          @comment = FactoryGirl.build(:comment, :commentable => @session)
-          EmailNotifications.send_comment_submitted(@session, @comment)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Novo comentário para sua sessão '#{@session.title}'") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/#{@session.author.full_name} &amp; #{@user.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}.*#comments/)}
-        it { should have_sent_email.with_body(/#{@comment.comment}/)}
-      end
-    end
-
-    context "in en" do
-      before(:each) do
-        @user = FactoryGirl.build(:author, :default_locale => 'en')
-      end
-
-      context "with single author" do
-        before(:each) do
-          @session = FactoryGirl.build(:session, :author => @user)
-          @comment = FactoryGirl.build(:comment, :commentable => @session)
-          EmailNotifications.send_comment_submitted(@session, @comment)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] New comment for your session '#{@session.title}'") }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/Dear #{@session.author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}.*#comments/)}
-        it { should have_sent_email.with_body(/#{@comment.comment}/)}
-      end
-
-      context "with second author" do
-        before(:each) do
-          user = FactoryGirl.build(:author, :default_locale => 'en')
-          @session = FactoryGirl.build(:session, :author => user, :second_author => @user)
-          @comment = FactoryGirl.build(:comment, :commentable => @session)
-          EmailNotifications.send_comment_submitted(@session, @comment)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] New comment for your session '#{@session.title}'") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/Dear #{@session.author.full_name} &amp; #{@user.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}.*#comments/)}
-        it { should have_sent_email.with_body(/#{@comment.comment}/)}
-      end
-    end
-  end
-
-  describe "early review submitted e-mail" do
-    context "in pt" do
-      before(:each) do
-        @user = FactoryGirl.build(:author, :default_locale => 'pt')
-      end
-
-      context "with single author" do
-        before(:each) do
-          @session = FactoryGirl.build(:session, :author => @user)
-          EmailNotifications.send_early_review_submitted(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Pré-avaliação da sua sessão '#{@session.title}'") }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/#{@session.author.full_name},/) }
-        it { should have_sent_email.with_body(/#{@session.title}/) }
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/reviews.*early/) }
-      end
-
-      context "with second author" do
-        before(:each) do
-          @session = FactoryGirl.build(:session, :second_author => @user)
-          EmailNotifications.send_early_review_submitted(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Pré-avaliação da sua sessão '#{@session.title}'") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/#{@session.author.full_name} &amp; #{@user.full_name},/) }
-        it { should have_sent_email.with_body(/#{@session.title}/) }
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/reviews.*early/) }
-      end
-    end
-
-    context "in en" do
-      before(:each) do
-        @user = FactoryGirl.build(:author, :default_locale => 'en')
-      end
-
-      context "with single author" do
-        before(:each) do
-          @session = FactoryGirl.build(:session, :author => @user)
-          EmailNotifications.send_early_review_submitted(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Early review submitted for your session '#{@session.title}'") }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/Dear #{@session.author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/reviews.*early/)}
-      end
-
-      context "with second author" do
-        before(:each) do
-          user = FactoryGirl.build(:author, :default_locale => 'en')
-          @session = FactoryGirl.build(:session, :author => user, :second_author => @user)
-          EmailNotifications.send_early_review_submitted(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Early review submitted for your session '#{@session.title}'") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.to(@user.email) }
-        it { should have_sent_email.with_body(/Dear #{@session.author.full_name} &amp; #{@user.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/reviews.*early/)}
-      end
-    end
-  end
-
-  describe "reviewer invitation e-mail" do
-    context "in pt" do
-      before(:each) do
-        @user = FactoryGirl.build(:user, :default_locale => 'pt')
-        @reviewer = FactoryGirl.build(:reviewer, :user => @user, :id => 3)
-        EmailNotifications.send_reviewer_invitation(@reviewer)
-      end
-
-      it { should have_sent_email.with_subject("[localhost:3000] Convite para equipe de avaliação da #{@conference.name}") }
-      it { should have_sent_email.to(@user.email) }
-      it { should have_sent_email.with_body(/\/reviewers\/3\/accept/)}
-      it { should have_sent_email.with_body(/\/reviewers\/3\/reject/)}
-    end
-
-    context "in en" do
-      before(:each) do
-        @user = FactoryGirl.build(:user, :default_locale => 'en')
-        @reviewer = FactoryGirl.build(:reviewer, :user => @user, :id => 3)
-        EmailNotifications.send_reviewer_invitation(@reviewer)
-      end
-
-      it { should have_sent_email.with_subject("[localhost:3000] Invitation to be part of #{@conference.name} review committee") }
-      it { should have_sent_email.to(@user.email) }
-      it { should have_sent_email.with_body(/\/reviewers\/3\/accept/)}
-      it { should have_sent_email.with_body(/\/reviewers\/3\/reject/)}
-    end
-  end
-
-  describe "notification of acceptance e-mail" do
+  context "user subscription" do
     before(:each) do
-      @session = FactoryGirl.build(:session, :state => 'in_review')
-      @session.review_decision = FactoryGirl.build(:review_decision, :outcome => Outcome.find_by_title('outcomes.accept.title'))
+      @user = FactoryGirl.create(:user)
+    end
+    
+    it "should include account details" do
+      mail = EmailNotifications.welcome(@user).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@user.email]
+  	  mail.encoded.should =~ /#{@user.username}/
+  	  mail.subject.should == "[localhost:3000] Cadastro realizado com sucesso"
+    end
+    
+    it "should be sent in system's locale" do
+      I18n.locale = 'en'
+      mail = EmailNotifications.welcome(@user).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@user.email]
+  	  mail.encoded.should =~ /Username.*#{@user.username}/
+  	  mail.subject.should == "[localhost:3000] Account registration"
+    end
+  end
+
+  context "password reset" do
+    before(:each) do
+      @user = FactoryGirl.create(:user)
+    end
+    
+    it "should include link with perishable_token" do
+      @user.send(:generate_reset_password_token!)
+      mail = EmailNotifications.reset_password_instructions(@user).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@user.email]
+  	  mail.encoded.should =~ /\/password\/edit\?/
+      mail.encoded.should =~ /#{@user.reset_password_token}/
+  	  mail.subject.should == "[localhost:3000] Recuperação de senha"
+    end
+    
+    it "should be sent in system's locale" do
+      I18n.locale = 'en'
+      @user.send(:generate_reset_password_token!)
+      mail = EmailNotifications.reset_password_instructions(@user).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@user.email]
+  	  mail.encoded.should =~ /\/password\/edit\?/
+      mail.encoded.should =~ /#{@user.reset_password_token}/
+  	  mail.subject.should == "[localhost:3000] Password reset"
+    end
+  end
+
+  context "session submission" do
+    before(:each) do
+      @session = FactoryGirl.create(:session)
+    end
+    
+    it "should be sent to first author" do
+      mail = EmailNotifications.session_submitted(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email]
+  	  mail.encoded.should =~ /#{@session.author.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
+  	  mail.subject.should == "[localhost:3000] Proposta de sessão submetida para #{@conference.name}"
+    end
+    
+    it "should be sent to second author, if available" do
+      user = FactoryGirl.create(:user)
+      @session.second_author = user
+      
+      mail = EmailNotifications.session_submitted(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email, user.email]
+  	  mail.encoded.should =~ /#{@session.author.full_name} &amp; #{user.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
+  	  mail.subject.should == "[localhost:3000] Proposta de sessão submetida para #{@conference.name}"
+    end
+    
+    it "should be sent to first author in system's locale" do
+      I18n.locale = 'en'
+      mail = EmailNotifications.session_submitted(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email]
+  	  mail.encoded.should =~ /Dear #{@session.author.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
+  	  mail.subject.should == "[localhost:3000] #{@conference.name} session proposal submitted"
     end
 
+    it "should be sent to second author, if available (in system's locale)" do
+      I18n.locale = 'en'
+      user = FactoryGirl.create(:user, :default_locale => 'fr')
+      @session.second_author = user
+      
+      mail = EmailNotifications.session_submitted(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email, user.email]
+  	  mail.encoded.should =~ /Dear #{@session.author.full_name} &amp; #{user.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
+  	  mail.subject.should == "[localhost:3000] #{@conference.name} session proposal submitted"
+    end
+  end
+
+  context "reviewer invitation" do
+    before(:each) do
+      @reviewer = FactoryGirl.build(:reviewer, :id => 3)
+    end
+    
+    it "should include link with invitation" do
+      mail = EmailNotifications.reviewer_invitation(@reviewer).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@reviewer.user.email]
+  	  mail.encoded.should =~ /\/reviewers\/3\/accept/
+  	  mail.encoded.should =~ /\/reviewers\/3\/reject/
+  	  mail.subject.should == "[localhost:3000] Convite para equipe de avaliação da #{@conference.name}"
+    end
+
+    it "should be sent in user's default language" do
+      @reviewer.user.default_locale = 'en'
+      mail = EmailNotifications.reviewer_invitation(@reviewer).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@reviewer.user.email]
+  	  mail.encoded.should =~ /\/reviewers\/3\/accept/
+  	  mail.encoded.should =~ /\/reviewers\/3\/reject/
+  	  mail.subject.should == "[localhost:3000] Invitation to be part of #{@conference.name} review committee"
+    end
+  end
+  
+  context "notification of acceptance" do
+    before(:each) do
+      @decision = FactoryGirl.build(:review_decision, :outcome => Outcome.find_by_title('outcomes.accept.title'))
+      @decision.session.update_attribute(:state, "in_review")
+      @decision.save
+      @session = @decision.session
+    end
+    
     it "should not be sent if session has no decision" do
-      session = FactoryGirl.build(:session, :conference => @conference)
-      lambda {EmailNotifications.send_notification_of_acceptance(session)}.should raise_error("Notification can't be sent before decision has been made")
+      session = FactoryGirl.create(:session, :conference => @conference)
+      lambda {EmailNotifications.notification_of_acceptance(session).deliver}.should raise_error("Notification can't be sent before decision has been made")
     end
-
+    
     it "should not be sent if session has been rejected" do
       @session.review_decision.expects(:rejected?).returns(true)
+      
+      lambda {EmailNotifications.notification_of_acceptance(@session).deliver}.should raise_error("Cannot accept a rejected session")
+    end
+    
+    it "should be sent to first author" do
+      mail = EmailNotifications.notification_of_acceptance(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email]
+  	  mail.encoded.should =~ /Caro #{@session.author.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
+      mail.encoded.should =~ /\/sessions\/#{@session.to_param}\/confirm/
+      mail.encoded.should =~ /\/sessions\/#{@session.to_param}\/withdraw/
+  	  
+  	  mail.subject.should == "[localhost:3000] Comunicado do Comitê de Programa da #{@conference.name}"
+    end
+    
+    it "should be sent to second author, if available" do
+      user = FactoryGirl.create(:user)
+      @session.second_author = user
+      
+      mail = EmailNotifications.notification_of_acceptance(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email, user.email]
+  	  mail.encoded.should =~ /Caros #{@session.author.full_name} &amp; #{user.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
+      mail.encoded.should =~ /\/sessions\/#{@session.to_param}\/confirm/
+      mail.encoded.should =~ /\/sessions\/#{@session.to_param}\/withdraw/
 
-      lambda {EmailNotifications.send_notification_of_acceptance(@session)}.should raise_error("Cannot accept a rejected session")
+  	  mail.subject.should == "[localhost:3000] Comunicado do Comitê de Programa da #{@conference.name}"
+    end
+    
+    it "should be sent to first author in default language" do
+      @session.author.default_locale = 'en'
+      mail = EmailNotifications.notification_of_acceptance(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email]
+  	  mail.encoded.should =~ /Dear #{@session.author.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
+      mail.encoded.should =~ /\/sessions\/#{@session.to_param}\/confirm/
+      mail.encoded.should =~ /\/sessions\/#{@session.to_param}\/withdraw/
+      
+  	  mail.subject.should == "[localhost:3000] Notification from the Program Committee of #{@conference.name}"
     end
 
-    context "in pt" do
-      before(:each) do
-        @session.author.default_locale = 'pt'
-      end
+    it "should be the same to both authors, if second autor is available" do
+      @session.author.default_locale = 'en'
+      user = FactoryGirl.create(:user, :default_locale => 'fr')
+      @session.second_author = user
+      
+      mail = EmailNotifications.notification_of_acceptance(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email, user.email]
+  	  mail.encoded.should =~ /Dear #{@session.author.full_name} &amp; #{user.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
+      mail.encoded.should =~ /\/sessions\/#{@session.to_param}\/confirm/
+      mail.encoded.should =~ /\/sessions\/#{@session.to_param}\/withdraw/
 
-      context "with single author" do
-        before(:each) do
-          EmailNotifications.send_notification_of_acceptance(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Comunicado do Comitê de Programa da #{@conference.name}") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.with_body(/Caro #{@session.author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/confirm/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/withdraw/)}
-      end
-
-      context "with second author" do
-        before(:each) do
-          @session.second_author = FactoryGirl.build(:author)
-          EmailNotifications.send_notification_of_acceptance(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Comunicado do Comitê de Programa da #{@conference.name}") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.to(@session.second_author.email) }
-        it { should have_sent_email.with_body(/Caros #{@session.author.full_name} &amp; #{@session.second_author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/confirm/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/withdraw/)}
-      end
+  	  mail.subject.should == "[localhost:3000] Notification from the Program Committee of #{@conference.name}"
     end
-
-    context "in en" do
-      before(:each) do
-        @session.author.default_locale = 'en'
-      end
-
-      context "with single author" do
-        before(:each) do
-          EmailNotifications.send_notification_of_acceptance(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Notification from the Program Committee of #{@conference.name}") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.with_body(/Dear #{@session.author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/confirm/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/withdraw/)}
-      end
-
-      context "with second author" do
-        before(:each) do
-          @session.second_author = FactoryGirl.build(:author)
-          EmailNotifications.send_notification_of_acceptance(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Notification from the Program Committee of #{@conference.name}") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.to(@session.second_author.email) }
-        it { should have_sent_email.with_body(/Dear #{@session.author.full_name} &amp; #{@session.second_author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/confirm/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}\/withdraw/)}
-      end
-    end
+    
   end
-
-  describe "notification of rejection e-mail" do
+  
+  context "notification of rejection" do
     before(:each) do
-      @session = FactoryGirl.build(:session, :state => 'in_review')
-      @session.review_decision = FactoryGirl.build(:review_decision, :outcome => Outcome.find_by_title('outcomes.reject.title'))
+      @decision = FactoryGirl.build(:review_decision, :outcome => Outcome.find_by_title('outcomes.reject.title'))
+      @decision.session.update_attribute(:state, "in_review")
+      @decision.save
+      @session = @decision.session
     end
-
+    
     it "should not be sent if session has no decision" do
-      session = FactoryGirl.build(:session, :conference => @conference)
-      lambda {EmailNotifications.send_notification_of_rejection(session)}.should raise_error("Notification can't be sent before decision has been made")
+      session = FactoryGirl.create(:session, :conference => @conference)
+      lambda {EmailNotifications.notification_of_rejection(session).deliver}.should raise_error("Notification can't be sent before decision has been made")
     end
-
+    
     it "should not be sent if session has been accepted" do
       @session.review_decision.expects(:accepted?).returns(true)
-
-      lambda {EmailNotifications.send_notification_of_rejection(@session)}.should raise_error("Cannot reject an accepted session")
+      
+      lambda {EmailNotifications.notification_of_rejection(@session).deliver}.should raise_error("Cannot reject an accepted session")
     end
 
-    context "in pt" do
-      before(:each) do
-        @session.author.default_locale = 'pt'
-      end
+    it "should be sent to first author" do
+      mail = EmailNotifications.notification_of_rejection(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email]
+  	  mail.encoded.should =~ /Caro #{@session.author.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
+  	  
+  	  mail.subject.should == "[localhost:3000] Comunicado do Comitê de Programa da #{@conference.name}"
+    end
+    
+    it "should be sent to second author, if available" do
+      user = FactoryGirl.create(:user)
+      @session.second_author = user
+      
+      mail = EmailNotifications.notification_of_rejection(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email, user.email]
+  	  mail.encoded.should =~ /Caros #{@session.author.full_name} &amp; #{user.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
 
-      context "with single author" do
-        before(:each) do
-          EmailNotifications.send_notification_of_rejection(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Comunicado do Comitê de Programa da #{@conference.name}") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.with_body(/Caro #{@session.author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}/)}
-      end
-
-      context "with second author" do
-        before(:each) do
-          @session.second_author = FactoryGirl.build(:author)
-          EmailNotifications.send_notification_of_rejection(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Comunicado do Comitê de Programa da #{@conference.name}") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.to(@session.second_author.email) }
-        it { should have_sent_email.with_body(/Caros #{@session.author.full_name} &amp; #{@session.second_author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}/)}
-      end
+  	  mail.subject.should == "[localhost:3000] Comunicado do Comitê de Programa da #{@conference.name}"
+    end
+    
+    it "should be sent to first author in default language" do
+      @session.author.default_locale = 'en'
+      mail = EmailNotifications.notification_of_rejection(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email]
+  	  mail.encoded.should =~ /Dear #{@session.author.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
+      
+  	  mail.subject.should == "[localhost:3000] Notification from the Program Committee of #{@conference.name}"
     end
 
-    context "in en" do
-      before(:each) do
-        @session.author.default_locale = 'en'
-      end
+    it "should be the same to both authors, if second autor is available" do
+      @session.author.default_locale = 'en'
+      user = FactoryGirl.create(:user, :default_locale => 'fr')
+      @session.second_author = user
+      
+      mail = EmailNotifications.notification_of_rejection(@session).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@session.author.email, user.email]
+  	  mail.encoded.should =~ /Dear #{@session.author.full_name} &amp; #{user.full_name},/
+  	  mail.encoded.should =~ /#{@session.title}/
+  	  mail.encoded.should =~ /\/sessions\/#{@session.to_param}/
 
-      context "with single author" do
-        before(:each) do
-          EmailNotifications.send_notification_of_rejection(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Notification from the Program Committee of #{@conference.name}") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.with_body(/Dear #{@session.author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}/)}
-      end
-
-      context "with second author" do
-        before(:each) do
-          @session.second_author = FactoryGirl.build(:author)
-          EmailNotifications.send_notification_of_rejection(@session)
-        end
-
-        it { should have_sent_email.with_subject("[localhost:3000] Notification from the Program Committee of #{@conference.name}") }
-        it { should have_sent_email.to(@session.author.email) }
-        it { should have_sent_email.to(@session.second_author.email) }
-        it { should have_sent_email.with_body(/Dear #{@session.author.full_name} &amp; #{@session.second_author.full_name},/)}
-        it { should have_sent_email.with_body(/#{@session.title}/)}
-        it { should have_sent_email.with_body(/\/sessions\/#{@session.to_param}/)}
-      end
+  	  mail.subject.should == "[localhost:3000] Notification from the Program Committee of #{@conference.name}"
+    end 
+  end
+  
+  context "registration pending" do
+    before(:each) do
+      @attendee = FactoryGirl.create(:attendee, :registration_date => Time.zone.local(2011, 04, 25, 12, 0, 0))
+    end
+    
+    it "should be sent to attendee cc'ed to conference organizer" do
+      mail = EmailNotifications.registration_pending(@attendee).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@attendee.email]
+      mail.cc.should == [AppConfig[:organizer][:email], AppConfig[:organizer][:cced_email]]
+      mail.encoded.should =~ /Caro #{@attendee.full_name},/
+      # mail.encoded.should =~ /#{I18n.l(Date.today + 5)},/
+      mail.encoded.should =~ /R\$ 165,00/
+      # mail.encoded.should =~ /http:\/\/www\.agilebrazil\.com\.br\/2011\/pt\/inscricoes\.php/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] Pedido de inscrição na #{@conference.name} enviado"
+    end
+    
+    it "should be sent to attendee according to country" do
+      @attendee.country = 'US'
+      mail = EmailNotifications.registration_pending(@attendee).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@attendee.email]
+      mail.cc.should == [AppConfig[:organizer][:email], AppConfig[:organizer][:cced_email]]
+      mail.encoded.should =~ /Dear #{@attendee.full_name},/
+      mail.encoded.should =~ /R\$ 165,00/
+      # mail.encoded.should =~ /#{I18n.l(Date.today + 5)},/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      # mail.encoded.should =~ /http:\/\/www\.agilebrazil\.com\.br\/2011\/en\/inscricoes\.php/
+      mail.subject.should == "[localhost:3000] Registration request to #{@conference.name} sent"
     end
   end
+
+  context "registration confirmed" do
+    before(:each) do
+      @attendee = FactoryGirl.create(:attendee, :registration_date => Time.zone.local(2011, 04, 25, 12, 0, 0))
+    end
+    
+    it "should be sent to attendee" do
+      mail = EmailNotifications.registration_confirmed(@attendee).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@attendee.email]
+      mail.cc.should == []
+      mail.encoded.should =~ /Caro #{@attendee.full_name},/
+      mail.encoded.should =~ /R\$ 165,00/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] Inscrição na #{@conference.name} confirmada"
+    end
+
+    it "should cc group contact if available" do
+      group = FactoryGirl.create(:registration_group)
+      @attendee.registration_group = group
+      
+      mail = EmailNotifications.registration_confirmed(@attendee).deliver
+      mail.to.should == [@attendee.email]
+      mail.cc.should == [group.contact_email]
+    end
+    
+    it "should be sent to attendee according to country" do
+      @attendee.country = 'US'
+      mail = EmailNotifications.registration_confirmed(@attendee).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@attendee.email]
+      mail.cc.should == []
+      mail.encoded.should =~ /Dear #{@attendee.full_name},/
+      mail.encoded.should =~ /R\$ 165,00/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] Registration confirmed for #{@conference.name}"
+    end
+  end
+
+  context "registration group attendee" do
+    before(:each) do
+      @registration_group = FactoryGirl.create(:registration_group)
+      @attendee = FactoryGirl.create(:attendee,
+        :registration_date => Time.zone.local(2011, 04, 25, 12, 0, 0),
+        :registration_type => RegistrationType.find_by_title('registration_type.group'),
+        :registration_group => @registration_group
+      )
+    end
+    
+    it "should be sent to attendee cc'ed to group organizer" do
+      mail = EmailNotifications.registration_group_attendee(@attendee, @registration_group).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@attendee.email]
+      mail.cc.should == [@registration_group.contact_email]
+      mail.encoded.should =~ /Caro #{@attendee.full_name},/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] Pedido de inscrição em empresa na #{@conference.name} enviado"
+    end
+  
+    it "should be sent to attendee according to country" do
+      @attendee.country = 'US'
+      mail = EmailNotifications.registration_group_attendee(@attendee, @registration_group).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@attendee.email]
+      mail.cc.should == [@registration_group.contact_email]
+      mail.encoded.should =~ /Dear #{@attendee.full_name},/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] Company registration request to #{@conference.name} sent"
+    end
+  end
+    
+  context "registration group pending" do
+    before(:each) do
+      @registration_group = FactoryGirl.create(:registration_group)
+      @attendee = FactoryGirl.create(:attendee,
+        :registration_date => Time.zone.local(2011, 04, 25, 12, 0, 0),
+        :registration_type => RegistrationType.find_by_title('registration_type.group'),
+        :registration_group => @registration_group
+      )
+    end
+
+    it "should be sent to group organizer cc'ed to conference organizer" do
+      mail = EmailNotifications.registration_group_pending(@registration_group).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@registration_group.contact_email]
+      mail.cc.should == [AppConfig[:organizer][:email], AppConfig[:organizer][:cced_email]]
+      mail.encoded.should =~ /#{@registration_group.contact_name},/
+      mail.encoded.should =~ /R\$ 135,00/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] Pedido de inscrição em empresa na #{@conference.name} enviado"
+    end
+  
+    it "should be sent to group organizer according to country" do
+      @registration_group.country = 'US'
+      mail = EmailNotifications.registration_group_pending(@registration_group).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@registration_group.contact_email]
+      mail.cc.should == [AppConfig[:organizer][:email], AppConfig[:organizer][:cced_email]]
+      mail.encoded.should =~ /Dear #{@registration_group.contact_name},/
+      mail.encoded.should =~ /R\$ 135,00/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] Company registration request to #{@conference.name} sent"
+    end
+  end
+  
+  context "registration group confirmed" do
+    before(:each) do
+      @registration_group = FactoryGirl.create(:registration_group)
+    end
+    
+    it "should be sent to group contact" do
+      mail = EmailNotifications.registration_group_confirmed(@registration_group).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@registration_group.contact_email]
+      mail.cc.should == [AppConfig[:organizer][:email], AppConfig[:organizer][:cced_email]]
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] Inscrição na #{@conference.name} confirmada"
+    end
+    
+    it "should be sent to group contact according to country" do
+      @registration_group.country = 'US'
+      mail = EmailNotifications.registration_group_confirmed(@registration_group).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@registration_group.contact_email]
+      mail.cc.should == [AppConfig[:organizer][:email], AppConfig[:organizer][:cced_email]]
+      mail.encoded.should =~ /Dear #{@registration_group.contact_name},/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] Registration confirmed for #{@conference.name}"
+    end
+  end
+
+  context "registration reminder" do
+    before(:each) do
+      @attendee = FactoryGirl.create(:attendee, :registration_date => Time.zone.local(2011, 04, 25, 12, 0, 0))
+    end
+    
+    it "should be sent to attendee cc'ed to conference organizer" do
+      mail = EmailNotifications.registration_reminder(@attendee).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@attendee.email]
+      mail.cc.should == [AppConfig[:organizer][:email], AppConfig[:organizer][:cced_email]]
+      mail.encoded.should =~ /Caro #{@attendee.full_name},/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] Nova forma de pagamento por Paypal para inscrições na #{@conference.name}"
+    end
+    
+    it "should be sent to attendee using defult_locale" do
+      @attendee.default_locale = 'en'
+      mail = EmailNotifications.registration_reminder(@attendee).deliver
+      ActionMailer::Base.deliveries.size.should == 1
+      mail.to.should == [@attendee.email]
+      mail.cc.should == [AppConfig[:organizer][:email], AppConfig[:organizer][:cced_email]]
+      mail.encoded.should =~ /Dear #{@attendee.full_name},/
+      mail.encoded.should =~ /#{AppConfig[:organizer][:email]}/
+      mail.subject.should == "[localhost:3000] New payment option via Paypal for registration for #{@conference.name}"
+    end
+  end
+  
 end

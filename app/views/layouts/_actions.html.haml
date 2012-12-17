@@ -1,52 +1,57 @@
 - if user_signed_in?
-  - if (current_user.reviewer? || current_user.organizer?) && (@conference.in_early_review_phase? || @conference.in_final_review_phase?)
-    - if (next_deadline = @conference.next_deadline(:reviewer))
-      #date
-        %p= t("conference.dates.#{next_deadline.last}")
-        %p <strong>#{l(next_deadline.first.to_date)}</strong>
+  - if current_user.author? || current_user.organizer?
+    #date
+      %p= t('actions.author_confirmation_date')
+      %p <strong>#{l(Ability::AUTHOR_CONFIRMATION_DEADLINE.to_date)}</strong>
+      - if current_user.organizer?
         #review_progress_count
           #{t('actions.review_goal')}:
           %span.progress
-  - elsif current_user.organizer? && (next_deadline = @conference.next_deadline(:organizer)) && (next_deadline.last == :author_notification || next_deadline.last == :author_confirmation)
-    #date
-      %p= t("conference.dates.#{next_deadline.last}")
-      %p <strong>#{l(next_deadline.first.to_date)}</strong>
-      #review_decisions_progress_count
-        #{t('actions.review_goal')}:
-        %span.progress
-  - elsif current_user.author?
-    - if (next_deadline = @conference.next_deadline(:author))
-      #date
-        %p= t("conference.dates.#{next_deadline.last}")
-        %p <strong>#{l(next_deadline.first.to_date)}</strong>
-  %h3
-    = render_avatar(current_user)
-    &= current_user.full_name
+  %h3&= current_user.full_name
+  
+  - if can?(:create, Attendee) || can?(:create, RegistrationGroup) || can?(:read, 'registered_attendees')
+    %h4= t('actions.section.registration')
+    %ul
+      - if can? :create, Attendee
+        %li= link_to(t('actions.new_registration'), new_attendee_path)
+        - if current_user.has_approved_session?(Conference.current)
+          %li= link_to(t('actions.new_speaker_registration'), new_attendee_path)
+      - if can? :create, RegistrationGroup
+        %li= link_to(t('actions.new_registration_group'), new_registration_group_path)
+      - if can? :read, 'registered_attendees'
+        %li= link_to(t('actions.new_sponsor_registration'), new_attendee_path)
+        %li= link_to(t('actions.registered_attendees'), registered_attendees_path)
+      - if can? :read, 'registered_groups'
+        %li= link_to(t('actions.registered_groups'), registered_groups_path)
+      - if can? :read, 'pending_attendees'
+        %li= link_to(t('actions.pending_attendees'), pending_attendees_path)
+      - if can? :index, Attendee
+        %li= link_to(t('actions.attendees_summary'), attendees_path)
 
   %h4= t('actions.section.session')
   %ul
     - if can? :create, Session
-      %li= link_to t('actions.submit_session'), new_session_path(@conference)
+      %li= link_to t('actions.submit_session'), new_session_path
     - if can? :read, Session
-      %li= link_to t('actions.browse_sessions'), sessions_path(@conference)
-      - if current_user.sessions_for_conference(@conference).count > 0
-        %li= link_to t('actions.my_sessions'), user_sessions_path(@conference, current_user)
+      %li= link_to t('actions.browse_sessions'), sessions_path
+      - if current_user.sessions.count > 0
+        %li= link_to t('actions.my_sessions'), user_my_sessions_path(current_user)
 
   - if current_user.reviewer? || current_user.organizer? || current_user.admin?
     %h4= t('actions.section.review')
     %ul
       - if can? :read, Organizer
-        %li= link_to t('actions.manage_organizers'), organizers_path(@conference)
+        %li= link_to t('actions.manage_organizers'), organizers_path
       - if can? :read, Reviewer
-        %li= link_to t('actions.manage_reviewers'), reviewers_path(@conference)
+        %li= link_to t('actions.manage_reviewers'), reviewers_path
       - if can? :read, 'organizer_sessions'
-        %li= link_to t('actions.organizer_sessions'), organizer_sessions_path(@conference)
+        %li= link_to t('actions.organizer_sessions'), organizer_sessions_path
       - if can? :read, 'reviewer_sessions'
-        %li= link_to t('actions.reviewer_sessions'), reviewer_sessions_path(@conference)
+        %li= link_to t('actions.reviewer_sessions'), reviewer_sessions_path
       - if can? :reviewer, 'reviews_listing'
-        %li= link_to t('actions.reviewer_reviews'), reviewer_reviews_path(@conference)
-      - if @session.present? && (can?(:create, EarlyReview, @session) || can?(:create, FinalReview, @session))
-        %li= link_to t('actions.review_session'), new_session_review_path(@conference, @session)
+        %li= link_to t('actions.reviewer_reviews'), reviewer_reviews_path
+      - if @session.present? && can?(:create, Review, @session)
+        %li= link_to t('actions.review_session'), new_session_review_path(@session)
 
   %h4= t('actions.section.user')
   %ul
@@ -54,65 +59,50 @@
       %li= link_to t('actions.profile'), user_path(current_user)
     - if can? :update, current_user
       %li= link_to t('actions.edit_profile'), edit_user_registration_path
-    %li= link_to "Logout", destroy_user_session_path, :method => :delete
+    %li= link_to "Logout", destroy_user_session_path
 
-  - if (current_user.reviewer? || current_user.organizer?) && (@conference.in_early_review_phase? || @conference.in_final_review_phase?)
+  - if current_user.organizer?
     :javascript
       $(document).ready(function() {
-        $.getJSON('#{reviews_path(@conference, :format => :js)}', function(data) {
-          var orange = Math.floor(parseInt(data.required_reviews) * 0.30);
-          var yellow = Math.floor(parseInt(data.required_reviews) * 0.60);
-          var green = Math.floor(parseInt(data.required_reviews) * 0.90);
+        $.getJSON('#{review_decisions_path(:format => :js)}', function(data) {
+          var orange = Math.floor(parseInt(data.required_decisions) * 0.30);
+          var yellow = Math.floor(parseInt(data.required_decisions) * 0.60);
+          var green = Math.floor(parseInt(data.required_decisions) * 0.90);
           var progressImages = {};
           progressImages[0] = '/assets/progressbg_red.gif';
           progressImages[orange] = '/assets/progressbg_orange.gif';
           progressImages[yellow] = '/assets/progressbg_yellow.gif';
           progressImages[green] = '/assets/progressbg_green.gif';
 
-          $("#review_progress_count .progress").progressBar(data.total_reviews, {
+          $("#review_progress_count .progress").progressBar(data.total_confirmed, {
             boxImage : '/assets/progressbar.gif',
-            max : data.required_reviews,
+            max : data.total_accepted,
             textFormat : 'fraction',
             barImage : progressImages
           });
         })
       })
-  - elsif current_user.organizer? && (next_deadline = @conference.next_deadline(:organizer)) && (next_deadline.last == :author_notification || next_deadline.last == :author_confirmation)
-    - goal = next_deadline.last == :author_notification ? "data.required_decisions" : "data.total_accepted"
-    - progress = next_deadline.last == :author_notification ? "data.total_decisions" : "data.total_confirmed"
-    :javascript
-      $(document).ready(function() {
-        $.getJSON('#{review_decisions_path(@conference, :format => :js)}', function(data) {
-          var orange = Math.floor(parseInt(#{goal}) * 0.30);
-          var yellow = Math.floor(parseInt(#{goal}) * 0.60);
-          var green = Math.floor(parseInt(#{goal}) * 0.90);
-          var progressImages = {};
-          progressImages[0] = '/assets/progressbg_red.gif';
-          progressImages[orange] = '/assets/progressbg_orange.gif';
-          progressImages[yellow] = '/assets/progressbg_yellow.gif';
-          progressImages[green] = '/assets/progressbg_green.gif';
-
-          $("#review_decisions_progress_count .progress").progressBar(#{progress}, {
-            boxImage : '/assets/progressbar.gif',
-            max : #{goal},
-            textFormat : 'fraction',
-            barImage : progressImages
-          });
-        })
-      })
-
+              
 - else
-  = semantic_form_for :user, :url => user_session_path do |f|
+  = semantic_form_for "user", :url => user_session_path do |f|
     = f.inputs do
       = f.input :username, :required => true, :input_html => {:tabindex => autotab}
       = f.input :password, :required => true, :hint => false, :input_html => {:tabindex => autotab}
-    = f.actions do
-      = f.action :submit, :label => "Log in", :button_html => {:tabindex => autotab}
+    = f.buttons do
+      = f.commit_button "Log in", :button_html => {:tabindex => autotab}
 
   %ul
     - if can? :create, User
       %li= link_to t('actions.signup'), new_user_registration_path
     %li= link_to t('title.lost_password'), new_user_password_path
+
+  - if can?(:create, Attendee) || can?(:create, RegistrationGroup)
+    %h4= t('actions.section.registration')
+    %ul
+      - if can? :create, Attendee
+        %li= link_to(t('actions.new_registration'), new_attendee_path)
+      - if can? :create, RegistrationGroup
+        %li= link_to(t('actions.new_registration_group'), new_registration_group_path)
 
   %br
   #warning

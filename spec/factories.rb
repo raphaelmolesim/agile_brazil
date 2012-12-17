@@ -1,11 +1,13 @@
 # encoding: UTF-8
 
 FactoryGirl.define do
-  sequence(:last_name) {|n| "Name#{n}"}
+  factory :conference do
+    sequence(:name) {|n| "Agile Brazil #{2000+n}"}
+  end
 
   factory :user do
     first_name "User"
-    last_name
+    sequence(:last_name) {|n| "Name#{n}"}
     username { |a| "#{a.first_name}.#{a.last_name}".downcase }
     email { |a| "#{a.username.parameterize}@example.com" }
     password "secret"
@@ -17,15 +19,11 @@ FactoryGirl.define do
     organization "ThoughtWorks"
     website_url "www.dtsato.com"
     bio "Some text about me..."
-
-    factory :author do
-      after_build { |u| u.add_role(:author) }
-    end
   end
 
   factory :simple_user, :class => User do
     first_name "User"
-    last_name
+    sequence(:last_name) {|n| "Name#{n}"}
     username { |a| "#{a.first_name}.#{a.last_name}".downcase }
     email { |a| "#{a.username.parameterize}@example.com" }
     password "secret"
@@ -33,29 +31,25 @@ FactoryGirl.define do
   end
 
   factory :session_type do
-    conference { Conference.current }
     title "session_types.tutorial.title"
     description "session_types.tutorial.description"
   end
 
   factory :track do
-    conference { Conference.current }
     title "tracks.engineering.title"
     description "tracks.engineering.description"
   end
 
   factory :audience_level do
-    conference { Conference.current }
     title "audience_levels.beginner.title"
     description "audience_levels.beginner.description"
   end
 
   factory :session do
-    conference { Conference.current }
-    track
-    session_type
-    audience_level
-    author
+    association :track
+    association :session_type
+    association :audience_level
+    association :conference
     duration_mins 50
     title "Fake title"
     summary "Summary details of session"
@@ -64,31 +58,31 @@ FactoryGirl.define do
     keyword_list "fake, tag"
     benefits "Benefits for audience"
     target_audience "Managers, developers, testers"
+    association :author, :factory => :user
     experience "Description of author's experience on subject"
   end
 
   factory :comment do
     association :commentable, :factory => :session
-    user
+    association :user
     comment "Fake comment body..."
   end
 
   factory :organizer do
-    user
-    conference { Conference.current }
-    track { |o| o.conference.tracks.first }
+    association :user
+    association :track
+    association :conference
   end
 
   factory :reviewer do
-    to_create { |instance| EmailNotifications.stubs(:send_reviewer_invitation); instance.save! }
-    user
-    conference { Conference.current }
+    association :user
+    association :conference
   end
 
   factory :preference do
-    reviewer
-    track { |p| p.reviewer.conference.tracks.first }
-    audience_level { |p| p.reviewer.conference.audience_levels.first }
+    association :reviewer
+    association :track
+    association :audience_level
     accepted true
   end
 
@@ -100,36 +94,30 @@ FactoryGirl.define do
     title 'recommendation.strong_reject.title'
   end
 
-  trait :review do
+  factory :review do
     association :author_agile_xp_rating, :factory => :rating
     association :author_proposal_xp_rating, :factory => :rating
-
+    
     proposal_track true
     proposal_level true
     proposal_type true
     proposal_duration true
     proposal_limit true
     proposal_abstract true
-
+    
     association :proposal_quality_rating, :factory => :rating
     association :proposal_relevance_rating, :factory => :rating
-
+    
+    association :recommendation
+    justification "Fake"
+    
     association :reviewer_confidence_rating, :factory => :rating
-
+    
     comments_to_organizers "Fake"
     comments_to_authors "Fake " * 40
-
+    
     association :reviewer, :factory => :user
-    session
-  end
-
-  factory :early_review, :class => EarlyReview, :traits => [:review] do
-    to_create { |instance| EmailNotifications.stubs(:send_early_review_submitted); instance.save! }
-  end
-
-  factory :final_review, :class => FinalReview, :traits => [:review] do
-    recommendation
-    justification "Fake"
+    association :session
   end
 
   factory :outcome do
@@ -138,38 +126,69 @@ FactoryGirl.define do
 
   factory :review_decision do
     association :organizer, :factory => :user
-    session
-    outcome
+    association :session
+    association :outcome
     note_to_authors "Some note to the authors"
     published false
   end
 
-  factory :room do
-    name "Room 1"
-    capacity 200
-    conference { Conference.current }
+  factory :attendee do
+    association :conference
+    registration_type { RegistrationType.find_by_title('registration_type.individual') }
+    
+    first_name "Attendee"
+    sequence(:last_name) {|n| "Name#{n}"}
+    email { |e| "#{e.last_name.parameterize}@example.com" }
+    email_confirmation { |e| "#{e.last_name.parameterize}@example.com" }
+    phone "(11) 3322-1234"
+    country "BR"
+    state "SP"
+    city "São Paulo"
+    organization "ThoughtWorks"
+    badge_name {|e| "The Great #{e.first_name}" }
+    cpf "111.444.777-35"
+    gender 'M'
+    twitter_user {|e| "#{e.last_name.parameterize}"}
+    address "Rua dos Bobos, 0"
+    neighbourhood "Vila Perdida"
+    zipcode "12345000"
   end
 
-  factory :guest_session do
-    title "Guest session title"
-    author "Guest session author"
-    summary "Longer description and summary for guest session"
-    conference { Conference.current }
-    keynote true
+  factory :course do
+    association :conference
+    name "Course"
+    full_name "That big course of ours"
+    combine false
   end
 
-  factory :all_hands do
-    title "all_hands.lunch.title"
+  factory :course_attendance do
+    association :course
+    association :attendee
   end
 
-  factory :lightning_talk_group do
-    lightning_talk_info {}
+  factory :registration_group do
+    name "Big Corp"
+    contact_name "Contact Name"
+    contact_email { |e| "contact@#{e.name.parameterize}.com" }
+    contact_email_confirmation { |e| "contact@#{e.name.parameterize}.com" }
+    phone "(11) 3322-1234"
+    fax "(11) 4422-1234"
+    country "BR"
+    state "SP"
+    city "São Paulo"
+    cnpj "69.103.604/0001-60"
+    state_inscription "110.042.490.114"
+    municipal_inscription "9999999"
+    address "Rua dos Bobos, 0"
+    neighbourhood "Vila Perdida"
+    zipcode "12345000"
+    total_attendees 5
   end
 
-  factory :activity do
-    start_at { DateTime.now }
-    end_at { |a| a.start_at + 1.hour }
-    room
-    association :detail, :factory => :session
+  factory :payment_notification do
+    params { {:some => 'params'} }
+    status "Completed"
+    transaction_id "9JU83038HS278211W"
+    association :invoicer, :factory => :attendee
   end
 end

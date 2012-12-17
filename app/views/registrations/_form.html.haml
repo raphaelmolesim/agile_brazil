@@ -1,4 +1,5 @@
 = form.inputs :user_login do
+  = form.input :default_locale, :as => :hidden
   = form.input :first_name, :required => true, :input_html => {:tabindex => autotab}
   = form.input :last_name, :required => true, :input_html => {:tabindex => autotab}
   = form.input :username, :required => true, :input_html => {:disabled => !@user.new_record?, :tabindex => autotab}
@@ -13,21 +14,19 @@
   = form.input :city, :required => true, :input_html => {:tabindex => autotab}
   = form.input :organization, :input_html => {:tabindex => autotab}
   = form.input :website_url, :input_html => {:tabindex => autotab}
-  = form.input :twitter_username, :input_html => {:tabindex => autotab}
   = form.input :bio, :required => true, :input_html => {:tabindex => autotab}
-  = form.input :default_locale, :required => true, :as => :select, :collection => ActionView::Helpers::FormOptionsHelper::SUPPORTED_LANGUAGES, :input_html => {:tabindex => autotab}
   - if !@user.new_record?
     = form.input :current_password, :required => true, :input_html => {:tabindex => autotab}
 
 :javascript
   $(document).ready(function() {
-    $("#user_country").bind('updated', countryTriggered);
+    $("#user_country").bind('updated', countryTriggered);  
     $("#user_country").bindSelectUpdated();
-
+    
     $("#user_wants_to_submit").change(wantsToSubmitTriggered).trigger('change');
     $("#user_country").trigger('updated');
   })
-
+  
   function countryTriggered() {
     if ($(this).val() != "BR") {
       $('#user_state').val('').attr('disabled', 'disabled');
@@ -37,7 +36,7 @@
       $('#user_state_input').find('label abbr').show();
     }
   }
-
+  
   function wantsToSubmitTriggered() {
     if ($(this).is(":checked")) {
       $("#user_country").removeAttr('disabled').trigger('updated');

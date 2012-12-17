@@ -4,8 +4,4 @@ class SessionTypesController < InheritedResources::Base
   
   actions :index
   
-  private
-  def collection
-    @session_types ||= end_of_association_chain.for_conference(@conference)
-  end
 end

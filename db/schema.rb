@@ -10,22 +10,36 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120821041038) do
+ActiveRecord::Schema.define(:version => 20120221010710) do
 
-  create_table "activities", :force => true do |t|
-    t.datetime "start_at"
-    t.datetime "end_at"
-    t.integer  "room_id"
-    t.integer  "detail_id"
-    t.string   "detail_type"
-    t.datetime "created_at",  :null => false
-    t.datetime "updated_at",  :null => false
-  end
-
-  create_table "all_hands", :force => true do |t|
-    t.string   "title"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
+  create_table "attendees", :force => true do |t|
+    t.integer  "conference_id"
+    t.string   "first_name"
+    t.string   "last_name"
+    t.string   "email"
+    t.string   "organization"
+    t.string   "phone"
+    t.string   "country"
+    t.string   "state"
+    t.string   "city"
+    t.string   "badge_name"
+    t.string   "cpf"
+    t.string   "gender"
+    t.string   "twitter_user"
+    t.string   "address"
+    t.string   "neighbourhood"
+    t.string   "zipcode"
+    t.string   "status"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "registration_type_id"
+    t.integer  "registration_group_id"
+    t.boolean  "email_sent",               :default => false
+    t.integer  "course_attendances_count", :default => 0
+    t.text     "notes"
+    t.datetime "registration_date"
+    t.string   "uri_token"
+    t.string   "default_locale",           :default => "pt"
   end
 
   create_table "audience_levels", :force => true do |t|
@@ -33,11 +47,10 @@ ActiveRecord::Schema.define(:version => 20120821041038) do
     t.string   "description"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "conference_id"
   end
 
   create_table "comments", :force => true do |t|
-    t.text     "comment"
+    t.text     "comment",          :default => ""
     t.integer  "commentable_id"
     t.string   "commentable_type"
     t.integer  "user_id"
@@ -54,31 +67,36 @@ ActiveRecord::Schema.define(:version => 20120821041038) do
     t.integer  "year"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.datetime "call_for_papers"
-    t.datetime "submissions_open"
-    t.datetime "submissions_deadline"
-    t.datetime "review_deadline"
-    t.datetime "author_notification"
-    t.datetime "author_confirmation"
-    t.string   "location_and_date"
-    t.datetime "presubmissions_deadline"
-    t.datetime "prereview_deadline"
   end
 
-  create_table "guest_sessions", :force => true do |t|
-    t.string   "title"
-    t.string   "author"
-    t.text     "summary"
+  create_table "course_attendances", :force => true do |t|
+    t.integer  "course_id"
+    t.integer  "attendee_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "course_prices", :force => true do |t|
+    t.integer  "course_id"
+    t.integer  "registration_period_id"
+    t.decimal  "value"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "courses", :force => true do |t|
     t.integer  "conference_id"
-    t.boolean  "keynote",       :default => false
-    t.datetime "created_at",                       :null => false
-    t.datetime "updated_at",                       :null => false
+    t.string   "name"
+    t.string   "full_name"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.boolean  "combine"
   end
 
-  create_table "lightning_talk_groups", :force => true do |t|
-    t.string   "lightning_talk_info"
-    t.datetime "created_at",          :null => false
-    t.datetime "updated_at",          :null => false
+  create_table "logos", :force => true do |t|
+    t.string   "format"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "organizers", :force => true do |t|
@@ -91,6 +109,28 @@ ActiveRecord::Schema.define(:version => 20120821041038) do
 
   create_table "outcomes", :force => true do |t|
     t.string   "title"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "payment_notifications", :force => true do |t|
+    t.text     "params"
+    t.string   "status"
+    t.string   "transaction_id"
+    t.integer  "invoicer_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "payer_email"
+    t.decimal  "settle_amount"
+    t.string   "settle_currency"
+    t.text     "notes"
+    t.string   "invoicer_type"
+  end
+
+  create_table "pre_registrations", :force => true do |t|
+    t.integer  "conference_id"
+    t.string   "email"
+    t.boolean  "used"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
@@ -111,6 +151,54 @@ ActiveRecord::Schema.define(:version => 20120821041038) do
   end
 
   create_table "recommendations", :force => true do |t|
+    t.string   "title"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "registration_groups", :force => true do |t|
+    t.string   "name"
+    t.string   "cnpj"
+    t.string   "state_inscription"
+    t.string   "municipal_inscription"
+    t.string   "contact_email"
+    t.string   "phone"
+    t.string   "fax"
+    t.string   "address"
+    t.string   "neighbourhood"
+    t.string   "city"
+    t.string   "state"
+    t.string   "zipcode"
+    t.string   "country"
+    t.integer  "total_attendees"
+    t.boolean  "email_sent",            :default => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "contact_name"
+    t.string   "uri_token"
+    t.string   "status"
+    t.text     "notes"
+  end
+
+  create_table "registration_periods", :force => true do |t|
+    t.integer  "conference_id"
+    t.datetime "start_at"
+    t.datetime "end_at"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "title"
+  end
+
+  create_table "registration_prices", :force => true do |t|
+    t.integer  "registration_type_id"
+    t.integer  "registration_period_id"
+    t.decimal  "value"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "registration_types", :force => true do |t|
+    t.integer  "conference_id"
     t.string   "title"
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -154,15 +242,6 @@ ActiveRecord::Schema.define(:version => 20120821041038) do
     t.integer  "session_id"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "type"
-  end
-
-  create_table "rooms", :force => true do |t|
-    t.string   "name"
-    t.integer  "capacity"
-    t.integer  "conference_id"
-    t.datetime "created_at",    :null => false
-    t.datetime "updated_at",    :null => false
   end
 
   create_table "session_types", :force => true do |t|
@@ -170,7 +249,6 @@ ActiveRecord::Schema.define(:version => 20120821041038) do
     t.string   "description"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "conference_id"
   end
 
   create_table "sessions", :force => true do |t|
@@ -180,7 +258,7 @@ ActiveRecord::Schema.define(:version => 20120821041038) do
     t.text     "mechanics"
     t.text     "benefits"
     t.string   "target_audience"
-    t.integer  "audience_limit"
+    t.integer  "audience_limit",    :limit => 255
     t.integer  "author_id"
     t.text     "experience"
     t.datetime "created_at"
@@ -191,11 +269,10 @@ ActiveRecord::Schema.define(:version => 20120821041038) do
     t.integer  "audience_level_id"
     t.integer  "second_author_id"
     t.string   "state"
-    t.integer  "final_reviews_count", :default => 0
+    t.integer  "reviews_count",                    :default => 0
     t.boolean  "author_agreement"
     t.boolean  "image_agreement"
     t.integer  "conference_id"
-    t.integer  "early_reviews_count", :default => 0
   end
 
   create_table "taggings", :force => true do |t|
@@ -220,7 +297,6 @@ ActiveRecord::Schema.define(:version => 20120821041038) do
     t.text     "description"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "conference_id"
   end
 
   create_table "users", :force => true do |t|
@@ -249,7 +325,14 @@ ActiveRecord::Schema.define(:version => 20120821041038) do
     t.string   "authentication_token"
     t.integer  "sign_in_count"
     t.datetime "reset_password_sent_at"
-    t.string   "twitter_username"
+  end
+
+  create_table "votes", :force => true do |t|
+    t.integer  "user_id"
+    t.integer  "logo_id"
+    t.string   "user_ip"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
 end

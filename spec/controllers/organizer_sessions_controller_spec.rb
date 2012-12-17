@@ -16,11 +16,12 @@ describe OrganizerSessionsController do
     get :index
     response.should render_template(:index)
   end
-
+  
   it "index action should find sessions on organizer's tracks" do
-    session = FactoryGirl.create(:session, :conference => @organizer.conference, :track => @organizer.track)
-    review_decision = FactoryGirl.create(:review_decision, :session => session, :organizer => @organizer.user)
+    Session.stubs(:for_user).returns(Session)
+    Session.expects(:for_conference).at_least(1).with(@organizer.conference).returns(Session)
+    Session.expects(:for_tracks).with([@organizer.track.id]).returns([])
     get :index
-    assigns(:sessions).should == [session]
+    assigns(:sessions).should == []
   end
 end

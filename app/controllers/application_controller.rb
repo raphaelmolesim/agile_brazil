@@ -5,7 +5,6 @@ class ApplicationController < ActionController::Base
 
   before_filter :set_locale
   before_filter :set_timezone
-  before_filter :set_conference
   before_filter :authenticate_user!
   before_filter :authorize_action
 
@@ -16,10 +15,13 @@ class ApplicationController < ActionController::Base
     redirect_to :back rescue redirect_to root_path
   end
 
+  def current_conference
+    @current_conference ||= Conference.current
+  end
+  helper_method :current_conference
+
   def current_ability
-    session = Session.find(params[:session_id]) if params[:session_id].present?
-    reviewer = Reviewer.find(params[:reviewer_id]) if params[:reviewer_id].present?
-    @current_ability ||= Ability.new(current_user, @conference, session, reviewer)
+    @current_ability ||= Ability.new(current_user, current_conference, params)
   end
 
   def default_url_options(options={})
@@ -31,6 +33,7 @@ class ApplicationController < ActionController::Base
     text.gsub(/[\s;'\"]/,'')
   end
 
+  protected
   private
   def set_locale
     # if params[:locale] is nil then I18n.default_locale will be used
@@ -40,10 +43,6 @@ class ApplicationController < ActionController::Base
   def set_timezone
     # current_user.time_zone #=> 'London'
     Time.zone = params[:time_zone]
-  end
-
-  def set_conference
-    @conference ||= Conference.find_by_year(params[:year]) || Conference.current
   end
 
   def authorize_action

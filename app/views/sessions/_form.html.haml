@@ -1,26 +1,29 @@
 = form.inputs do
   = form.input :author_id, :as => :hidden, :input_html => {:tabindex => autotab}
-  = form.input :track_id, :required => true, :as => :select, :collection => @tracks, :member_label => Proc.new { |tr| t(tr.title) }, :input_html => {:tabindex => autotab}, :hint => t('formtastic.hints.session.track_id', :year => "/#{@conference.year}")
-  = form.input :audience_level_id, :required => true, :as => :select, :collection => @audience_levels, :member_label => Proc.new { |al| t(al.title) }, :input_html => {:tabindex => autotab}, :hint => t('formtastic.hints.session.audience_level_id', :year => "/#{@conference.year}")
-  = form.input :session_type_id, :required => true, :as => :select, :collection => @session_types, :member_label => Proc.new { |st| t(st.title) }, :input_html => {:tabindex => autotab}, :hint => t('formtastic.hints.session.session_type_id', :year => "/#{@conference.year}")
+  = form.input :track_id, :required => true, :as => :select, :collection => Track.all, :member_label => Proc.new { |tr| t(tr.title) }, :input_html => {:tabindex => autotab}
+  = form.input :audience_level_id, :required => true, :as => :select, :collection => AudienceLevel.all, :member_label => Proc.new { |al| t(al.title) }, :input_html => {:tabindex => autotab}
+  = form.input :session_type_id, :required => true, :as => :select, :collection => SessionType.all, :member_label => Proc.new { |st| t(st.title) }, :input_html => {:tabindex => autotab}
   = form.input :duration_mins, :required => true, :as => :select, :collection => [["10 #{t('generic.minutes')}", 10], ["50 #{t('generic.minutes')}", 50], ["110 #{t('generic.minutes')}", 110]], :input_html => {:tabindex => autotab}
   = form.input :audience_limit, :input_html => {:tabindex => autotab}
   = form.input :title, :required => true, :input_html => {:tabindex => autotab}
-  = form.input :keyword_list, :required => true, :input_html => {:tabindex => autotab, :'data-autocomplete-url' => tags_path(:format => :js)}
-  = form.input :second_author_username, :input_html => {:tabindex => autotab, :'data-autocomplete-url' => users_path(:format => :js)}
+  = form.input :keyword_list, :required => true, :input_html => {:tabindex => autotab}
+  = form.input :second_author_username, :input_html => {:tabindex => autotab}
   = form.input :target_audience, :required => true, :input_html => {:tabindex => autotab}
-  = form.input :summary, :required => true, :input_html => {:rows => 10, :tabindex => autotab}, :hint => t('formtastic.hints.session.summary', :year => "/#{@conference.year}")
-  = form.input :description, :required => true, :input_html => {:tabindex => autotab}, :hint => t('formtastic.hints.session.description', :year => "/#{@conference.year}")
-  = form.input :mechanics, :required => true, :input_html => {:tabindex => autotab}, :hint => t('formtastic.hints.session.mechanics', :year => "/#{@conference.year}")
-  = form.input :benefits, :required => true, :input_html => {:rows => 10, :tabindex => autotab}, :hint => t('formtastic.hints.session.benefits', :year => "/#{@conference.year}")
-  = form.input :experience, :required => true, :input_html => {:rows => 10, :tabindex => autotab}, :hint => t('formtastic.hints.session.experience', :year => "/#{@conference.year}")
+  = form.input :summary, :required => true, :input_html => {:rows => 10, :tabindex => autotab}
+  = form.input :description, :required => true, :input_html => {:tabindex => autotab}
+  = form.input :mechanics, :required => true, :input_html => {:tabindex => autotab}
+  = form.input :benefits, :required => true, :input_html => {:rows => 10, :tabindex => autotab}
+  = form.input :experience, :required => true, :input_html => {:rows => 10, :tabindex => autotab}
 
 :javascript
   $(document).ready(function() {
+    $("#session_second_author_username").autocomplete("#{users_path(:format => :js)}");
+    $("#session_keyword_list").autocomplete("#{tags_path(:format => :js)}", {
+      multiple: true
+    });
+    
     $("#session_session_type_id").filterOn("#session_track_id", {
-      "4":  ["", "1", "2"],
-      "8":  ["", "4", "5"],
-      "13": ["", "9"]
+      "4": ["", "1", "2"]
     })
     $("#session_track_id").bindSelectUpdated();
 
@@ -28,37 +31,22 @@
       "1": ["10"],
       "2": ["10"],
       "3": ["10"],
-      "4": ["10"],
-      "5": ["10"],
-      "6": ["10"],
-      "7": ["", "50", "110"],
-      "8": ["", "10", "110"],
-      "9": ["", "10", "50"],
-      "10": ["", "50", "110"]
+      "4": ["", "50", "110"]
     })
     $("#session_session_type_id").bindSelectUpdated();
 
     $("#session_session_type_id").bind('updated', sessionTypeActions);
     $("#session_session_type_id").bindSelectUpdated();
-
+    
     $("#session_session_type_id, #session_track_id").trigger('updated');
-
-    $('#session_title').charCount({allowed: 100});
-    $('#session_keyword_list').charCount({allowed: 10, separator: ','});
-    $('#session_target_audience').charCount({allowed: 200});
-    $('#session_summary').charCount({allowed: 800});
-    $('#session_description').charCount({allowed: 2400});
-    $('#session_mechanics').charCount({allowed: 2400});
-    $('#session_benefits').charCount({allowed: 400});
-    $('#session_experience').charCount({allowed: 400});
   })
-
+  
   function sessionTypeActions() {
-    // Workshops, Tutorials, or Hands On
-    if ($.inArray($(this).val(), ['1', '2', '4', '5', '9']) !== -1) {
+    // Workshops or Tutorials
+    if ($(this).val() === "2" || $(this).val() === "1") {
       $("#session_audience_limit_input").show();
-      // Only Workshop or Hands On
-      if ($.inArray($(this).val(), ['2', '5', '9']) !== -1) {
+      // Only Workshop
+      if ($(this).val() === "2") {
         $('#session_mechanics_input').find('label abbr').show();
       } else {
         $('#session_mechanics_input').find('label abbr').hide();

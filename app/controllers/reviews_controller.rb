@@ -4,24 +4,24 @@ class ReviewsController < InheritedResources::Base
   respond_to :html
 
   belongs_to :session
-
+  
   def index
     index! do |format|
       format.html { render :author }
     end
   end
-
+  
   def organizer
     index! do |format|
       format.html { render :organizer }
     end
   end
-
+  
   def create
     create! do |success, failure|
       success.html do
         flash[:notice] = t('flash.review.create.success')
-        redirect_to session_review_path(@conference, @session, @review)
+        redirect_to session_review_path(@session, @review)
       end
       failure.html do
         flash.now[:error] = t('flash.failure')
@@ -32,27 +32,8 @@ class ReviewsController < InheritedResources::Base
 
   protected
   def build_resource
-    attributes = params[:early_review] || params[:final_review] || {}
+    attributes = params[:review] || {}
     attributes[:reviewer_id] = current_user.id
-    attributes[:proposal_duration] = true
     @review ||= end_of_association_chain.send(method_for_build, attributes)
-  end
-
-  def resource
-    @review ||= Review.find(params[:id])
-  end
-
-  def resource_class
-    in_early_review_phase? ? EarlyReview : FinalReview
-  end
-
-  def method_for_association_chain
-    in_early_review_phase? ? :early_reviews : :final_reviews
-  end
-
-  private
-  def in_early_review_phase?
-    return params[:type] == 'early' if params[:type].present?
-    @conference.in_early_review_phase?
   end
 end

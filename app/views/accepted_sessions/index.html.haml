@@ -1,48 +1,37 @@
-!!! 5
-%html{html_attrs(I18n.locale)}
+- title t('title.accepted_sessions')
+- show_actions!
 
-  %head
-    %title
-      #{@conference.name} - #{t('title.accepted_sessions')}
-    %meta{"http-equiv"=>"Content-Type", :content=>"text/html; charset=utf-8"}/
-    %link{"rel" => "shortcut icon", "href" => "#{image_path('favicon.ico')}"}/
-    = stylesheet_link_tag :accepted_sessions
-    = javascript_include_tag :accepted_sessions
+%ul#tabs
+  - @tracks.each do |track|
+    %li= link_to t(track.title), "#track_#{track.id}", :class => "javascript_link"
 
-  %body{:style => "margin: auto; width: 940px"}
-    #accepted_sessions
-      - @activities.group_by(&:date).each do |date, activities|
-        - rooms = activities.map(&:room).uniq.sort
-        %h2= l(date, :format => :short)
-        %table
-          %thead
-            %tr
-              %td
-              - rooms.each do |room|
-                %th{:style => "width: #{100.0 / rooms.size}%"} #{t("generic.room")} #{room.name}
-          %tbody
-            - skip_row = 0
-            - Slot.divide(activities.map(&:start_at).min, activities.map(&:end_at).max, 10.minutes).each do |slot|
-              - if skip_row > 0
-                - skip_row -= 1
-                - next
-              - else
-                %tr
-                  - activities_for_slot = activities.select { |activity| activity.starts_in?(slot) }
-                  - unless activities_for_slot.empty?
-                    %th= l(slot.start, :format => :hour_minute)
-                  - rooms.each do |room|
-                    - activities_for_slot.select { |activity| activity.in_room?(room) }.each do |activity|
-                      - if activity.all_rooms?
-                        - if activities_for_slot.size == 1
-                          - skip_row = activity.slots_remaining(slot) - 1
-                          - rowspan = 1
-                        - else
-                          - rowspan = activity.slots_remaining(slot)
-                        %td{:rowspan => rowspan, :colspan => (rooms.size - activities_for_slot.size + 1), :class => activity.css_classes}
-                          - if activity.detail.present?
-                            .content= render activity.detail, :activity => activity
-                      - else
-                        %td{:rowspan => activity.slots_remaining(slot), :colspan => 1, :class => activity.css_classes}
-                          - if activity.detail.present?
-                            .content= render activity.detail, :activity => activity
+- @tracks.each do |track|
+  %div.tab{:id => "track_#{track.id}"}
+    %a{:name => "track_#{track.id}"}
+    %h3.track= t(track.title)
+    - sessions = @sessions.select{|s| s.track == track}
+    - sessions.each do |session|
+      %a{:name => session.id} 
+      %h4.title= session.title
+      %ul.spaced
+        %li= link_to_function h(session.author.full_name), "toggle('bio_#{session.id}')", :class => "author"
+        - if session.second_author
+          %li= link_to_function h(session.second_author.full_name), "toggle('bio_#{session.id}')", :class => "author"
+      %ul.spaced
+        %li
+          %span.level{:class => "audience_level_#{session.audience_level.id}"}= t(session.audience_level.title)
+        %li
+          %span.type{:class => "session_type_#{session.session_type.id}"}= t(session.session_type.title)
+        %li
+          &= session.try(:duration_mins)
+          = t('generic.minutes')
+        - unless session.audience_limit.blank?
+          %li= t('session.audience_limit', :limit => session.audience_limit)
+      %span.bio{:id => "bio_#{session.id}"}
+        %h6= session.author.full_name
+        = textilize(session.author.try(:bio))
+        - if session.second_author
+          %h6= session.second_author.full_name
+          = textilize(session.second_author.try(:bio))
+
+      = textilize(session.try(:summary))

@@ -1,6 +1,41 @@
+-- Votes Report
+select    votes.*,
+          users.*,
+          session_aggr.cnt AS first_author_count,
+          session_aggr_2.cnt AS second_author_count,
+          comment_aggr.cnt AS comment_count
+from      votes
+inner join
+          users
+          on users.id = votes.user_id
+left outer join (
+            SELECT author_id, count(*) AS cnt
+            FROM sessions
+            GROUP BY author_id
+          ) AS session_aggr
+          ON session_aggr.author_id = users.id
+left outer join (
+            SELECT second_author_id, count(*) AS cnt
+            FROM sessions
+            GROUP BY second_author_id
+          ) AS session_aggr_2
+          ON session_aggr_2.second_author_id = users.id
+left outer join (
+            SELECT user_id, count(*) AS cnt
+            FROM comments
+            GROUP BY user_id
+          ) AS comment_aggr
+          ON comment_aggr.user_id = users.id
+where     user_ip IN (
+            select user_ip from votes
+            group by user_ip
+            having count(user_ip) > 1
+          )
+order by  votes.user_ip,
+          votes.created_at
+
 -- Reviews Report
-select    reviews.type,
-          sessions.id,
+select    sessions.id,
           sessions.title,
           first_author.first_name,
           first_author.last_name,
@@ -81,8 +116,8 @@ inner join
           users AS reviewer
           on reviewer.id = reviews.reviewer_id
 where     sessions.state <> 'cancelled'
-          AND sessions.conference_id = 3
-order by sessions.id, reviews.type DESC
+          AND conference_id = 2
+order by sessions.id
 
 -- Reviewer experience on track
 select    reviewer.first_name,
